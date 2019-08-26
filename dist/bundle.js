@@ -21,7 +21,10 @@ window.drop = function (e) {
     e.preventDefault();
     var sourceElement = gameBoard.getElement(e.dataTransfer.getData("text/plain"));
     var targetElement = gameBoard.getElement(e.currentTarget.parentElement.id);
+    console.log(sourceElement);
+    console.log(targetElement);
     gameBoard.nextTurn();
+    gameBoard.pickWeapon(sourceElement.address, targetElement.address);
     gameBoard.placeElement(sourceElement, targetElement);
     gameBoard.animateMovement(sourceElement, targetElement);
 };
@@ -44,7 +47,7 @@ window.dragstart = function (e) {
 var gameBoard = new _board2.default();
 
 var table = gameBoard.initUI();
-
+console.log("Game Started");
 (function () {
     // document.body.appendChild(gameBoard.ui);
     $('#gameboard').html(table.outerHTML);
@@ -99,9 +102,9 @@ var Board = function () {
         this.weapons = [];
         this.generateWeapons();
         var defaultWeapon = this.weapons[0];
-        this.playerOne = new _player2.default(1, "p1", defaultWeapon, 'img/player1.png', "", { top: 180, bottom: 0, left: 90, right: -90, lastValue: 0, dirStr: "bottom" });
+        this.playerOne = new _player2.default(1, "p1", new _weapon2.default('Ordo', 10, 'img/ordo.png'), 'img/player1.png', "", { top: 180, bottom: 0, left: 90, right: -90, lastValue: 0, dirStr: "bottom" });
         // this.playerOne.direction = {top:180, bottom:0, left:90, right:-90, lastValue: 0};
-        this.playerTwo = new _player2.default(2, "p2", defaultWeapon, 'img/player2.png', "", { top: 0, bottom: 180, left: -90, right: 90, lastValue: 0, dirStr: "top" });
+        this.playerTwo = new _player2.default(2, "p2", new _weapon2.default('Ordo', 10, 'img/ordo.png'), 'img/player2.png', "", { top: 0, bottom: 180, left: -90, right: 90, lastValue: 0, dirStr: "top" });
         // this.playerTwo.direction = {top:0, bottom:180, left:-90, right:90, lastValue: 0};
         this.activePlayer = "";
 
@@ -150,13 +153,13 @@ var Board = function () {
     }, {
         key: 'generateWeapons',
         value: function generateWeapons() {
-            var ordo = new _weapon2.default('Ordo', 10, 'img/ordo.png');
+            // let ordo = new Weapon('Ordo',10 ,'img/ordo.png');
             var estes = new _weapon2.default('Estes Mini', 15, 'img/EstesMini.png');
             var fab = new _weapon2.default('FAB-500', 20, 'img/FAB-500.png');
             var sion = new _weapon2.default('Sion', 25, 'img/sion.png');
             var mOne = new _weapon2.default('M1002', 30, 'img/M1002.png');
 
-            this.weapons.push(ordo, estes, fab, sion, mOne);
+            this.weapons.push(estes, fab, sion, mOne);
         }
     }, {
         key: 'initUI',
@@ -165,7 +168,6 @@ var Board = function () {
 
             var table = document.createElement('table');
             var map = this.map;
-            this.validateMoves(this.activePlayer.position);
 
             // Placing Obstacles on map
             var obstacles = this.generateObstacles(10);
@@ -188,8 +190,6 @@ var Board = function () {
                     this.map[randomLocation[0]][randomLocation[1]].content = obstacle;
                     this.map[randomLocation[0]][randomLocation[1]].validMove = false;
                 }
-
-                // Placing Weapons
             } catch (err) {
                 _didIteratorError = true;
                 _iteratorError = err;
@@ -205,6 +205,8 @@ var Board = function () {
                 }
             }
 
+            this.validateMoves(this.activePlayer.position);
+            // Placing Weapons
             var _iteratorNormalCompletion2 = true;
             var _didIteratorError2 = false;
             var _iteratorError2 = undefined;
@@ -221,7 +223,7 @@ var Board = function () {
 
                     this.placeElement(false, this.map[randomLocation[0]][randomLocation[1]], weapon);
                     // this.map[randomLocation[0]][randomLocation[1]].content = obstacle;
-                    this.map[randomLocation[0]][randomLocation[1]].validMove = false;
+                    // this.map[randomLocation[0]][randomLocation[1]].validMove = false;
                 }
             } catch (err) {
                 _didIteratorError2 = true;
@@ -267,7 +269,6 @@ var Board = function () {
 
                     if (value.id == map[targetPosition[1]][targetPosition[0]].id) {
                         cell.classList.add("locked-target");
-                        console.log(targetPosition);
                     }
                     // cell.innerHTML = span.outerHTML;
                     cell.setAttribute("validMove", value.validMove);
@@ -337,6 +338,7 @@ var Board = function () {
         value: function updateUIElement() {
             var _this2 = this;
 
+            console.log("Updating.......");
             var table = document.createElement('table');
             var map = this.map;
             this.validateMoves(this.activePlayer.position);
@@ -636,45 +638,70 @@ var Board = function () {
 
             // Setting Horizental Moves
 
-
+            // Left # 1
             area = this.elementExisit([location[0], location[1] - 1]) ? map[location[0]][location[1] - 1] : false;
+            area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
 
-            // console.log(JSON.parse(JSON.stringify(area)));
-
-            area != false && area.content != "obstacle" ? area.validMove = true : false;
-
-            // Checking if obstacle detected at first
-            if (area != false && area.content.constructor.name != "Obstacle") {
+            // Left # 2 - Checking if obstacle detected at first
+            if (area != false && area.validMove == true) {
                 area = this.elementExisit([location[0], location[1] - 2]) ? map[location[0]][location[1] - 2] : false;
-                area != false && area.content != "obstacle" ? area.validMove = true : false;
+                area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
             }
 
-            area = this.elementExisit([location[0], location[1] + 1]) ? map[location[0]][location[1] + 1] : false;
-            area != false && area.content != "obstacle" ? area.validMove = true : false;
+            // Left # 3
+            if (area != false && area.validMove == true) {
+                area = this.elementExisit([location[0], location[1] - 3]) ? map[location[0]][location[1] - 3] : false;
+                area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
+            }
 
-            // Checking if obstacle detected at first
-            if (area != false && area.content.constructor.name != "Obstacle") {
+            // Right # 1
+            area = this.elementExisit([location[0], location[1] + 1]) ? map[location[0]][location[1] + 1] : false;
+            area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
+
+            // Right # 2
+            if (area.validMove == true) {
                 area = this.elementExisit([location[0], location[1] + 2]) ? map[location[0]][location[1] + 2] : false;
-                area != false && area.content != "obstacle" ? area.validMove = true : false;
+                area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
+            }
+
+            // Right # 3
+            if (area.validMove == true) {
+                area = this.elementExisit([location[0], location[1] + 3]) ? map[location[0]][location[1] + 3] : false;
+                area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
             }
 
             // Setting Vertical Moves
+            // Top # 1
             area = this.elementExisit([location[0] - 1, location[1]]) ? map[location[0] - 1][location[1]] : false;
-            area != false && area.content != "obstacle" ? area.validMove = true : false;
+            area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
 
-            // Checking if obstacle detected at first
-            if (area != false && area.content.constructor.name != "Obstacle") {
+            // Top # 2 - Checking if obstacle detected at first
+            if (area.validMove == true) {
                 area = this.elementExisit([location[0] - 2, location[1]]) ? map[location[0] - 2][location[1]] : false;
-                area != false && area.content != "obstacle" ? area.validMove = true : false;
+                area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
             }
 
-            area = this.elementExisit([location[0] + 1, location[1]]) ? map[location[0] + 1][location[1]] : false;
-            area != false && area.content != "obstacle" ? area.validMove = true : false;
+            // Top # 3 
+            if (area.validMove == true) {
+                area = this.elementExisit([location[0] - 3, location[1]]) ? map[location[0] - 3][location[1]] : false;
+                area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
+            }
 
-            // Checking if obstacle detected at first
-            if (area != false && area.content.constructor.name != "Obstacle") {
+            // Bottom # 1 
+            area = this.elementExisit([location[0] + 1, location[1]]) ? map[location[0] + 1][location[1]] : false;
+            area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
+
+            // console.log(JSON.parse(JSON.stringify(area)));
+            // Bottom # 2
+            if (area.validMove == true) {
                 area = this.elementExisit([location[0] + 2, location[1]]) ? map[location[0] + 2][location[1]] : false;
-                area != false && area.content != "obstacle" ? area.validMove = true : false;
+                area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
+            }
+
+            // Bottom # 3
+            if (area.validMove == true) {
+                area = this.elementExisit([location[0] + 3, location[1]]) ? map[location[0] + 3][location[1]] : false;
+                area != false && area.content.constructor.name != "Obstacle" ? area.validMove = true : false;
             }
         }
     }, {
@@ -767,9 +794,21 @@ var Board = function () {
                 for (var cell = 0; cell < this.map[index].length; cell++) {
                     var element = this.map[index][cell];
                     if (element.id == targetElement.id) {
+                        var oldContent = this.map[index][cell].content;
                         this.map[index][cell].content = content ? content : sourceElement.content;
+                        // Problem - Content Replaced Before
                         if (element.content != undefined && element.content.constructor.name == "Player") {
+                            var oldPosition = this.map[index][cell].content.position;
+                            var newPosition = [index, cell];
+                            // this.pickWeapon(oldPosition, newPosition);
+
                             this.map[index][cell].content.position = [index, cell];
+                            // setTimeout(() => {
+                            //     this.pickWeapon(oldPosition, newPosition);
+                            // }, 1);
+
+                            // console.log(JSON.parse(JSON.stringify(sourceElement)));
+                            // console.log(sourceElement);
                         }
                         // if(element.content != undefined && element.content.constructor.name == "Obstacle"){
                         //     this.map[index][cell].typeName = "Obstacle";
@@ -789,6 +828,141 @@ var Board = function () {
             }
 
             return found;
+        }
+    }, {
+        key: 'pickWeapon',
+        value: function pickWeapon(oldPosition, newPosition) {
+            console.log(oldPosition);
+
+            var changedElement = newPosition.filter(function (element) {
+                return !oldPosition.includes(element);
+            });
+            var changedIndexPosition = newPosition.indexOf(changedElement[0]);
+
+            // const range = changedIndexPosition == 0 ? [newPosition[changedIndexPosition], newPosition[1]] : [newPosition[1], newPosition[changedIndexPosition]];
+
+            var scanRange = [oldPosition, newPosition];
+
+            // if(changedIndexPosition != -1 && changedIndexPosition == 0){
+            //     scanRange = [newPosition[changedIndexPosition], newPosition[1]];
+            // } else {
+            //     scanRange = [newPosition[1], newPosition[changedIndexPosition]];
+            // }
+
+            console.log("Scan Range " + scanRange);
+
+            var detectedObjects = this.objectsInRange(scanRange);
+
+            // Get Weapons from objects
+            // detectedObjects.forEach(obj => {
+            //     console.log("yoooo");
+            //     console.log(obj.object);
+            //     if(obj.object.constructor.name == "Weapon"){
+            //         console.log("Weapon Detected");
+            //     }
+            // });
+
+            // Getting random available position to place old weapon
+            var randomPosition = [];
+            do {
+                randomPosition = _util2.default.randomMapPosition();
+            } while (this.map[randomPosition[0]][randomPosition[1]].content != "");
+
+            for (var index = 0; index < detectedObjects.length; index++) {
+                var element = detectedObjects[index];
+                console.log("Pos ADD");
+                console.log(JSON.stringify(newPosition));
+                console.log(JSON.stringify(element.position));
+                console.log(newPosition);
+                console.log(element.position);
+                console.log(newPosition == element.position);
+                console.log(element);
+                if (element.object.constructor.name == "Weapon" && JSON.stringify(newPosition) == JSON.stringify(element.position)) {
+                    console.log("Weapon Detected");
+                    var oldWeapon = this.activePlayer.weapon;
+                    this.activePlayer.weapon = element.object;
+                    this.placeElement(false, this.map[randomPosition[0]][randomPosition[1]], oldWeapon);
+                    this.map[element.position[0]][element.position[1]].content = "";
+                    break;
+                }
+            }
+
+            console.log("Detected_Objects");
+            console.log(detectedObjects);
+            console.log("Detected_Objects__END");
+
+            // this.map[newPosition[0]][newPosition[1]].content.position = newPosition;
+            // if (changedElement != [] && changedIndexPosition != -1) {
+            //     console.log("jere");
+            //     const change = (changedIndexPosition == 0 ? "row" : "column");
+            //     if (change == "row" && changedIndexPosition == 0) {
+            //         if (newPosition[0] > oldPosition[0]) {
+            //             movementRange = ["row", oldPosition[changedIndexPosition], newPosition[changedIndexPosition]];
+            //         }
+            //     }
+
+
+            // }
+        }
+    }, {
+        key: 'objectsInRange',
+        value: function objectsInRange(range) {
+            var collectedObjects = [];
+            var oldRange = range[0];
+            var newRange = range[1];
+            var changedElement = newRange.filter(function (element) {
+                return !oldRange.includes(element);
+            });
+            var changedIndex = newRange.indexOf(changedElement[0]);
+            var temp = [];
+
+            if (newRange[0] < oldRange[0] || newRange[1] < oldRange[1]) {
+                temp = [newRange[0], newRange[1]];
+                newRange = [oldRange[0], oldRange[1]];
+                oldRange = temp;
+            }
+
+            // if(newRange[changedIndex] > oldRange[changedIndex]){}
+            for (var row = oldRange[0]; row <= newRange[0]; row++) {
+                var column = this.map[row];
+                console.log("row " + row);
+                for (var col = oldRange[1]; col <= newRange[1]; col++) {
+                    var iRow = this.map[row][col];
+                    console.log("col " + col);
+                    // element.content != undefined && element.content.constructor.name == "Player"
+                    // console.log("iRow");
+                    // console.log(iRow);
+                    console.log("ObjectsinRange - Start");
+                    console.log(JSON.parse(JSON.stringify(iRow)));
+                    console.log("ObjectsinRange - end");
+
+                    if (iRow != undefined && _typeof(iRow.content) == "object") {
+                        collectedObjects.push({ object: iRow.content, position: [row, col] });
+                    }
+                }
+            }
+
+            // if(newRange[changedIndex] < oldRange[changedIndex]){
+            //     for (let row = oldRange[0]; row >= newRange[0]; row--) {
+            //         const column = this.map[row];
+
+            //         for (let col = oldRange[1]; col >= newRange[1]; col--) {
+            //             const iRow = this.map[row][col];
+            //             // element.content != undefined && element.content.constructor.name == "Player"
+            //             // console.log("iRow");
+            //             // console.log(iRow);
+            //             console.log(JSON.parse(JSON.stringify(iRow)));
+
+            //             if(iRow != undefined && typeof iRow.content == "object"){
+            //                 collectedObjects.push(iRow.content);
+            //             }
+            //         }
+            //     }
+            // }
+
+
+            console.log(collectedObjects);
+            return collectedObjects;
         }
     }, {
         key: 'findCell',

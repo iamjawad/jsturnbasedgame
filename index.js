@@ -14,10 +14,13 @@ window.drop = function(e){
     e.preventDefault();
     let sourceElement = gameBoard.getElement(e.dataTransfer.getData("text/plain"));
     let targetElement = gameBoard.getElement(e.currentTarget.parentElement.id);
+    console.log(sourceElement);
+    console.log(targetElement);
     gameBoard.nextTurn();
+    gameBoard.pickWeapon(sourceElement.address, targetElement.address);
     gameBoard.placeElement(sourceElement,targetElement);
     gameBoard.animateMovement(sourceElement, targetElement);
-    
+
 }
 
 window.dragleave = function(e){
@@ -40,7 +43,7 @@ window.dragstart = function(e){
 var gameBoard = new Board();
 
 let table = gameBoard.initUI();
-
+console.log("Game Started");
 (function() {
     // document.body.appendChild(gameBoard.ui);
     $('#gameboard').html(table.outerHTML); 
