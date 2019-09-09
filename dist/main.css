@@ -1,5 +1,6 @@
 table{
     border-collapse: inherit;
+    background-color: #fff7e1;
     box-sizing: initial;
 }
 
@@ -39,11 +40,10 @@ table tr td > span {
 }
 
 .obstacle{
-    background-image: url("img/obs2.png");
-    background-size: contain;
+    background-image: url("img/stone.png");
+    background-size: 65%;
     background-repeat: no-repeat;
-    background-position: center;
-    background-color: #ffe57a;
+    background-position: bottom;
 }
 
 .health{
