@@ -1452,10 +1452,7 @@ var Weapon = function () {
                             opposite.health -= _this.damage;
                         }
 
-                        var changeId = "#" + opposite.name + "health";
-                        // $('#p1health').text(player.health);
                         opposite.updateHealth();
-                        $(changeId).text(opposite.health);
 
                         if (opposite.health <= 0) {
                             opposite.health = 0;
