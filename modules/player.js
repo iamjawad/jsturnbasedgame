@@ -1,3 +1,5 @@
+import TinyTracker from './TinyTracker'
+
 class Player{
     constructor(id, name, weapon, picture, position = "", direction = ""){
         this.id = id;
@@ -10,11 +12,19 @@ class Player{
         this.position = position;
         this.direction = direction;
         this.ui = this.getUi();
+        this.defending = false;
+        this.mapId = "";
+        this.healthTrackerUI = new TinyTracker("trackerhealth" + id);
     }
 
 
     move(){
         $( ".active-player" ).animate({ "left": "-=50px" }, "slow" );
+    }
+
+    updateHealth(){
+        this.healthTrackerUI.updateHealth(this.mapId, this.health);
+        this.healthTrackerUI.place();
     }
 
     attack(){

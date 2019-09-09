@@ -52,7 +52,7 @@ table tr td > span {
     padding: 10px 40px;
 }
 
-.score-num{
+.health{
     background-color: darkkhaki;
     padding: 10px 10px;
     color: white;
@@ -71,6 +71,8 @@ table tr td > span {
 
 .app-header{
     background-color: #fcac00;
+    float: left;
+    width: 693px;
 }
 
 .app-logo img{
@@ -80,7 +82,7 @@ table tr td > span {
 
 .app-title{
     font-weight: bold;
-    font-size: 30px;
+    font-size: 15px;
     color: #80003d;
     border: 3px solid #b9004b;
     padding: 14px;
@@ -91,7 +93,8 @@ table tr td > span {
 
 .player-score-box{
     background-color: #7c5000;
-    padding: 20px;
+    padding: 10px;
+    display: inline-block;
 }
 
 .active-player{
@@ -115,8 +118,8 @@ table tr td > span {
 }
 
 .vibration{
-    -webkit-animation: mymove 1s linear 0.2s; /* Safari 4.0 - 8.0 */
-    -moz-animation: mymove 1s linear 0.2s;
+    -webkit-animation: vibration-ani 1s linear 0.2s; /* Safari 4.0 - 8.0 */
+    -moz-animation: vibration-ani 1s linear 0.2s;
     animation: vibration-ani 1s linear 0.2s;
 }
 
@@ -129,4 +132,61 @@ table tr td > span {
     color: white;
     left: 27px;
     top: 63px;
+}
+
+.abs-center{
+    position: absolute;
+    left: 18%;
+    top: 40%;
+}
+
+#mpopup .content{
+    background-color: #fcac00;
+    display: inline-block;
+    padding: 38px;
+    color: white;
+    font-size: 27px;
+    text-transform: uppercase;
+    border: 9px solid #3c9b00;
+    border-radius: 5px;
+    opacity: 0.9;
+}
+
+.splash{
+    position: absolute;
+    top: 15%;
+    left: 3%;
+    border: 10px solid #8b2a00;
+    z-index: 100000000;
+}
+
+.tiny-tracker{
+    position: absolute;
+}
+
+.tiny-tracker i{
+    font-size: 2.5em;
+    position: relative;
+    color: #e60101;
+    top: -100px;
+    left: -9px;
+    -webkit-animation: healthheart-ani 1s linear 0.5s ; /* Safari 4.0 - 8.0 */
+    -moz-animation: healthheart-ani 1s linear 0.5s infinite;
+    animation: healthheart-ani 1s linear 0.5s infinite;
+}
+
+.tiny-tracker .health-state{
+    font-size: 10px;
+    text-align: center;
+    left: 12px;
+    top: 12px;
+    position: absolute;
+    color: white !important;
+}
+
+@keyframes healthheart-ani{
+    0% {color: #ff0040}
+    45% {color: #dd1c03}
+    85% {color: #cc1100}
+    100% {color: #ff0037}
 }

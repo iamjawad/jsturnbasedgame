@@ -16,10 +16,15 @@ window.drop = function(e){
     let targetElement = gameBoard.getElement(e.currentTarget.parentElement.id);
     console.log(sourceElement);
     console.log(targetElement);
-    gameBoard.nextTurn();
-    gameBoard.pickWeapon(sourceElement.address, targetElement.address);
-    gameBoard.placeElement(sourceElement,targetElement);
-    gameBoard.animateMovement(sourceElement, targetElement);
+
+    if(sourceElement.content != targetElement.content){
+        gameBoard.pickWeapon(sourceElement.address, targetElement.address);
+        gameBoard.nextTurn();
+        gameBoard.placeElement(sourceElement,targetElement);
+        gameBoard.animateMovement(sourceElement, targetElement);
+    }
+    
+    
 
 }
 
@@ -35,7 +40,6 @@ window.dragend = function(e){
 
 window.dragstart = function(e){
     // e.preventDefault();
-    
     e.dataTransfer.setData("text/plain", e.currentTarget.parentElement.id);
     e.currentTarget.classList.add("dragging");
 }

@@ -23,10 +23,13 @@ window.drop = function (e) {
     var targetElement = gameBoard.getElement(e.currentTarget.parentElement.id);
     console.log(sourceElement);
     console.log(targetElement);
-    gameBoard.nextTurn();
-    gameBoard.pickWeapon(sourceElement.address, targetElement.address);
-    gameBoard.placeElement(sourceElement, targetElement);
-    gameBoard.animateMovement(sourceElement, targetElement);
+
+    if (sourceElement.content != targetElement.content) {
+        gameBoard.pickWeapon(sourceElement.address, targetElement.address);
+        gameBoard.nextTurn();
+        gameBoard.placeElement(sourceElement, targetElement);
+        gameBoard.animateMovement(sourceElement, targetElement);
+    }
 };
 
 window.dragleave = function (e) {
@@ -39,7 +42,6 @@ window.dragend = function (e) {
 
 window.dragstart = function (e) {
     // e.preventDefault();
-
     e.dataTransfer.setData("text/plain", e.currentTarget.parentElement.id);
     e.currentTarget.classList.add("dragging");
 };
@@ -62,7 +64,76 @@ console.log("Game Started");
 
 // document.body.appendChild(table);
 
-},{"./modules/board":2}],2:[function(require,module,exports){
+},{"./modules/board":3}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var TinyTracker = function () {
+    function TinyTracker(domId) {
+        _classCallCheck(this, TinyTracker);
+
+        this.symbol = "fa-heart";
+        this.id = "";
+        this.health = "";
+        this.ui = "";
+        this.domId = domId;
+    }
+
+    _createClass(TinyTracker, [{
+        key: "updateHealth",
+        value: function updateHealth(id, health) {
+            this.id = id;
+            this.health = health;
+        }
+    }, {
+        key: "initUI",
+        value: function initUI() {
+            var wrapper = document.createElement('div');
+            var icon = document.createElement('i');
+            var value = document.createElement('i');
+            value.id = this.domId;
+
+            wrapper.classList.add('tiny-tracker');
+            icon.classList.add("fas");
+            icon.classList.add(this.symbol);
+            value.classList.add("health-state");
+            value.innerText = this.health;
+            icon.appendChild(value);
+            wrapper.appendChild(icon);
+            // wrapper.appendChild(value);
+
+            this.ui = wrapper;
+            return wrapper;
+        }
+    }, {
+        key: "updateUI",
+        value: function updateUI() {}
+    }, {
+        key: "place",
+        value: function place() {
+
+            if (this.ui == "") {
+                var target = document.getElementById(this.id);
+                target.appendChild(this.initUI());
+            } else {
+                $('#' + this.domId).text(this.health);
+            }
+        }
+    }]);
+
+    return TinyTracker;
+}();
+
+exports.default = TinyTracker;
+
+},{}],3:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -107,7 +178,7 @@ var Board = function () {
         this.playerTwo = new _player2.default(2, "p2", new _weapon2.default('Ordo', 10, 'img/ordo.png'), 'img/player2.png', "", { top: 0, bottom: 180, left: -90, right: 90, lastValue: 0, dirStr: "top" });
         // this.playerTwo.direction = {top:0, bottom:180, left:-90, right:90, lastValue: 0};
         this.activePlayer = "";
-
+        this.gameEnded = false;
         this.init();
     }
 
@@ -166,6 +237,7 @@ var Board = function () {
         value: function initUI() {
             var _this = this;
 
+            // this.showSplash();
             var table = document.createElement('table');
             var map = this.map;
 
@@ -275,7 +347,8 @@ var Board = function () {
                     cell.setAttribute("id", value.id);
                     cell.setAttribute("isBlank", value.isBlank);
                     cell.setAttribute("content", value.content);
-                    if (typeName == "Player" || value.validMove == true) {
+                    cell.setAttribute("draggable", false);
+                    if (typeName == "Player" && value.content == _this.activePlayer || value.validMove == true) {
                         span.setAttribute("ondragover", "dragover(event)");
                         span.setAttribute("ondragenter", "dragenter(event)");
                         span.setAttribute("ondragend", "dragend(event)");
@@ -319,15 +392,37 @@ var Board = function () {
 
             this.ui = table;
             var self = this;
+
+            setTimeout(function () {
+                _this.playerOne.updateHealth();
+                _this.playerTwo.updateHealth();
+            }, 1);
+
+            // Fire on double click
+            $(function () {
+                $('#gameboard table').on('dblclick', 'tr', function (e) {
+                    e.preventDefault();
+                    var oppositePlayer = self.getOppositePlayer();
+                    self.activePlayer.weapon.fire(self.activePlayer, oppositePlayer, self);
+                });
+            });
+
+            // Defend on right click
             $(function () {
                 $('#gameboard table').on('contextmenu', 'tr', function (e) {
                     e.preventDefault();
-                    self.activePlayer.weapon.fire();
-                    self.activePlayer.score += 10;
-                    var oppositePlayer = self.getOppositePlayer();
-                    oppositePlayer.health -= 10;
-                    console.log(self.getOppositePlayer().health);
-                    console.log(self.activePlayer.score);
+                    var targetId = $(e.target).parent().attr("id");
+
+                    if (targetId == self.activePlayer.mapId) {
+                        self.activePlayer.defending = true;
+                        _util2.default.showInfo("Defending", self.activePlayer.name + " is defending the attack!", true);
+                        console.log("Defending");
+                    } else {
+                        console.log("JUst changed turn");
+                    }
+
+                    self.nextTurn();
+                    self.updateUIElement();
                 });
             });
 
@@ -381,7 +476,8 @@ var Board = function () {
                     cell.setAttribute("id", value.id);
                     cell.setAttribute("isBlank", value.isBlank);
                     cell.setAttribute("content", value.content);
-                    if (typeName == "Player" || value.validMove == true) {
+                    cell.setAttribute("draggable", false);
+                    if (typeName == "Player" && value.content == _this2.activePlayer || value.validMove == true && _this2.gameEnded == false) {
                         span.setAttribute("ondragover", "dragover(event)");
                         span.setAttribute("ondragenter", "dragenter(event)");
                         span.setAttribute("ondragend", "dragend(event)");
@@ -432,11 +528,38 @@ var Board = function () {
             this.ui = table;
             var self = this;
             $(function () {
-                $('#gameboard table').on('contextmenu', 'tr', function (e) {
+                $('#gameboard table').on('dblclick', 'tr', function (e) {
                     e.preventDefault();
-                    self.activePlayer.weapon.fire();
+                    var oppositePlayer = self.getOppositePlayer();
+                    self.activePlayer.weapon.fire(self.activePlayer, oppositePlayer, self);
                 });
             });
+
+            // Defend on right click
+            $(function () {
+                $('#gameboard table').on('contextmenu', 'tr', function (e) {
+                    e.preventDefault();
+                    var targetId = $(e.target).parent().attr("id");
+
+                    if (targetId == self.activePlayer.mapId) {
+                        self.activePlayer.defending = true;
+                        _util2.default.showInfo("Defending", self.activePlayer.name + " is defending the attack!", true);
+                        console.log("Defending");
+                    } else {
+                        console.log("JUst changed turn");
+                    }
+
+                    self.nextTurn();
+                    self.updateUIElement();
+                });
+            });
+
+            this.playerOne.healthTrackerUI.ui = "";
+            this.playerTwo.healthTrackerUI.ui = "";
+            setTimeout(function () {
+                _this2.playerOne.updateHealth();
+                _this2.playerTwo.updateHealth();
+            }, 1);
         }
     }, {
         key: 'getTargetPosition',
@@ -499,11 +622,11 @@ var Board = function () {
     }, {
         key: 'getOppositePlayer',
         value: function getOppositePlayer() {
-            if (this.activePlayer == this.playerOne) {
-                return this.activePlayer;
+            if (JSON.stringify(this.activePlayer) == JSON.stringify(this.playerOne)) {
+                return this.playerTwo;
             }
 
-            return this.playerTwo;
+            return this.playerOne;
         }
     }, {
         key: 'updatePlayerDirection',
@@ -747,6 +870,31 @@ var Board = function () {
 
             return obstacles;
         }
+    }, {
+        key: 'showSplash',
+        value: function showSplash() {
+            var wrapper = document.createElement('div');
+            wrapper.classList.add("splash");
+            var img = document.createElement('img');
+            img.src = "img/splash.png";
+            wrapper.appendChild(img);
+            document.body.appendChild(wrapper);
+
+            $(wrapper).click(function () {
+                $(this).animate({
+                    opacity: "toggle"
+                }, {
+                    duration: 3000,
+                    specialEasing: {
+                        width: "linear",
+                        height: "easeOutBounce"
+                    },
+                    complete: function complete() {
+                        $(this).remove();
+                    }
+                });
+            });
+        }
 
         // placeElement(sourceElement, targetElement){
 
@@ -803,6 +951,7 @@ var Board = function () {
                             // this.pickWeapon(oldPosition, newPosition);
 
                             this.map[index][cell].content.position = [index, cell];
+                            this.map[index][cell].content.mapId = targetElement.id;
                             // setTimeout(() => {
                             //     this.pickWeapon(oldPosition, newPosition);
                             // }, 1);
@@ -870,13 +1019,13 @@ var Board = function () {
 
             for (var index = 0; index < detectedObjects.length; index++) {
                 var element = detectedObjects[index];
-                console.log("Pos ADD");
-                console.log(JSON.stringify(newPosition));
-                console.log(JSON.stringify(element.position));
-                console.log(newPosition);
-                console.log(element.position);
-                console.log(newPosition == element.position);
-                console.log(element);
+                // console.log("Pos ADD");
+                // console.log(JSON.stringify(newPosition));
+                // console.log(JSON.stringify(element.position));
+                // console.log(newPosition);
+                // console.log(element.position);
+                // console.log(newPosition == element.position);
+                // console.log(element);
                 if (element.object.constructor.name == "Weapon" && JSON.stringify(newPosition) == JSON.stringify(element.position)) {
                     console.log("Weapon Detected");
                     var oldWeapon = this.activePlayer.weapon;
@@ -997,7 +1146,7 @@ var Board = function () {
 
 exports.default = Board;
 
-},{"./obstacle":3,"./player":4,"./util":5,"./weapon":6}],3:[function(require,module,exports){
+},{"./obstacle":4,"./player":5,"./util":6,"./weapon":7}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1033,7 +1182,7 @@ var Obstacle = function () {
 
 exports.default = Obstacle;
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1041,6 +1190,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _TinyTracker = require("./TinyTracker");
+
+var _TinyTracker2 = _interopRequireDefault(_TinyTracker);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -1061,12 +1216,21 @@ var Player = function () {
         this.position = position;
         this.direction = direction;
         this.ui = this.getUi();
+        this.defending = false;
+        this.mapId = "";
+        this.healthTrackerUI = new _TinyTracker2.default("trackerhealth" + id);
     }
 
     _createClass(Player, [{
         key: "move",
         value: function move() {
             $(".active-player").animate({ "left": "-=50px" }, "slow");
+        }
+    }, {
+        key: "updateHealth",
+        value: function updateHealth() {
+            this.healthTrackerUI.updateHealth(this.mapId, this.health);
+            this.healthTrackerUI.place();
         }
     }, {
         key: "attack",
@@ -1101,7 +1265,7 @@ var Player = function () {
 
 exports.default = Player;
 
-},{}],5:[function(require,module,exports){
+},{"./TinyTracker":2}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1130,6 +1294,35 @@ var Util = function () {
 
             return [row, col];
         }
+    }, {
+        key: "showInfo",
+        value: function showInfo() {
+            var title = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "Info";
+            var msg = arguments[1];
+            var autoHide = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+            var box = document.createElement('div');
+            box.id = "mpopup";
+            box.classList.add("abs-center");
+
+            var boxTitle = document.createElement('div');
+            boxTitle.classList.add("header");
+            boxTitle.innerText = title;
+            box.appendChild(boxTitle);
+
+            var boxContent = document.createElement('div');
+            boxContent.classList.add('content');
+            boxContent.innerText = msg;
+            box.appendChild(boxContent);
+
+            document.body.appendChild(box);
+
+            if (autoHide == true) {
+                setTimeout(function () {
+                    $(box).fadeOut();
+                }, 2500);
+            }
+        }
     }]);
 
     return Util;
@@ -1137,7 +1330,7 @@ var Util = function () {
 
 exports.default = Util;
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1145,6 +1338,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _util = require('./util');
+
+var _util2 = _interopRequireDefault(_util);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -1159,6 +1358,7 @@ var Weapon = function () {
         this.damage = damage;
         this.picture = picture;
         this.ui = this.getUI();
+        this.defend = false;
     }
 
     _createClass(Weapon, [{
@@ -1181,6 +1381,13 @@ var Weapon = function () {
     }, {
         key: 'fire',
         value: function fire() {
+            var player = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+
+            var _this = this;
+
+            var opposite = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+            var board = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+
             var activePlayer = $('.active-player span img');
             var direction = $('.active-player').attr("direction");
             var changeInDirection = "";
@@ -1206,7 +1413,7 @@ var Weapon = function () {
                 default:
                     break;
             }
-
+            board.nextTurn();
             var wrapper = $(document.createElement('span'));
             wrapper.css({
                 position: "absolute",
@@ -1236,8 +1443,29 @@ var Weapon = function () {
                     img.attr("src", "img/fire3.gif" + "?id=" + Math.random());
                     target.find('img').addClass("vibration");
                     var timeout = setTimeout(function () {
+                        board.updateUIElement();
                         img.remove();
                         target.find('img').removeClass("vibration");
+
+                        // Update health
+                        if (opposite.mapId == target.attr("id")) {
+                            opposite.health -= _this.damage;
+                        }
+
+                        var changeId = "#" + opposite.name + "health";
+                        // $('#p1health').text(player.health);
+                        opposite.updateHealth();
+                        $(changeId).text(opposite.health);
+
+                        if (opposite.health <= 0) {
+                            opposite.health = 0;
+                            opposite.updateHealth();
+                            board.gameEnded = true;
+                            board.updateUIElement();
+                            _util2.default.showInfo("Game Over", player.name + " won the game!", false);
+                            return;
+                        }
+
                         clearTimeout(timeout);
                     }, 1500);
                 }
@@ -1250,4 +1478,4 @@ var Weapon = function () {
 
 exports.default = Weapon;
 
-},{}]},{},[1]);
+},{"./util":6}]},{},[1]);

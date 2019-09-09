@@ -8,6 +8,7 @@
     <script src="./bootstrap/js/bootstrap.min.js"></script>
     <script src="./jquery-3.4.1.min.js"></script>
     <script src="./jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="external/fontawesome/css/all.css">
     <link rel="stylesheet" href="main.css">
     <title>Turn-based Board Game</title>
     
@@ -18,30 +19,35 @@
             <div class="col-md-10">
                 
                 <div class="row">
-                    <div class="col-md-8">
+                    <div class="col-md-12">
                         <div class="app-header">
                             <p class="app-logo">
-                                <img src="img/logo.png" width="126px" alt="">
+                                <img src="img/logo.png" width="90px" alt="">
                                 <span class="app-title">
-                                    BATTTLE OF SAIO
+                                    BATTLE OF SAIO
                                 </span>
                             </p>
                             
                         </div>
-                    </div>
-                    <div class="col-md-3">
                         <div class="player-score-box">
                                 <div class="player">
-                                    <span class="player-one score">PlayerOne</span>
-                                    <span class="score-num" id="playeronescore">66</span>
+                                    <span class="player-one score">Player One</span>
+                                    <span class="health">
+                                        <span><i class="fas fa-heart"></i> </span>
+                                        <span id="p1health">100</span>
+                                    </span>
                                 </div>
                                 <div class="player">
-                                    <span class="player-two score">PlayerTwo</span>
-                                    <span class="score-num" id="playertwoscore">45</span>
+                                    <span class="player-two score">Player Two</span>
+                                    <span class="health">
+                                        <span><i class="fas fa-heart"></i> </span>
+                                        <span id="p2health">100</span>
+                                    </span>
                                 </div>
                         </div>
                     </div>
-                </div>
+                    </div>
+                   
                 <div id="gameboard"></div>
                 
             </div>

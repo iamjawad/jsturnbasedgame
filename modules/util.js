@@ -6,6 +6,30 @@ class Util{
         return [row, col];
 
     }
+
+    static showInfo(title = "Info", msg, autoHide = true){
+        const box = document.createElement('div');
+        box.id = "mpopup";
+        box.classList.add("abs-center");
+
+        const boxTitle = document.createElement('div');
+        boxTitle.classList.add("header");
+        boxTitle.innerText = title;
+        box.appendChild(boxTitle);
+
+        const boxContent = document.createElement('div');
+        boxContent.classList.add('content');
+        boxContent.innerText = msg;
+        box.appendChild(boxContent);
+
+        document.body.appendChild(box);
+
+        if(autoHide == true){
+            setTimeout(() => {
+                $(box).fadeOut();
+            }, 2500);
+        }
+    }
 }
 
 export default Util;

@@ -1,9 +1,11 @@
+import Util from './util'
 class Weapon{
     constructor(name, damage = 10, picture = ""){
         this.name = name;
         this.damage = damage;
         this.picture = picture;
-        this.ui = this.getUI();    
+        this.ui = this.getUI();
+        this.defend = false;    
     }
 
     getUI(){
@@ -23,7 +25,7 @@ class Weapon{
     }
     
 
-    fire(){
+    fire(player = "", opposite = "", board = ""){
         let activePlayer = $('.active-player span img');
         let direction = $('.active-player').attr("direction");
         let changeInDirection = "";
@@ -51,7 +53,7 @@ class Weapon{
             default:
                 break;
         }
-
+        board.nextTurn();
         let wrapper = $(document.createElement('span'));
         wrapper.css({
             position: "absolute",
@@ -83,8 +85,30 @@ class Weapon{
                     img.attr("src","img/fire3.gif" + "?id=" + Math.random());
                     target.find('img').addClass("vibration");
                     let timeout = setTimeout(() => {
+                        board.updateUIElement();
                         img.remove();
                         target.find('img').removeClass("vibration");
+                       
+                        // Update health
+                        if(opposite.mapId == target.attr("id")){
+                            opposite.health -= this.damage;
+                        }
+
+                        const changeId = "#" + opposite.name + "health";
+                        // $('#p1health').text(player.health);
+                        opposite.updateHealth();
+                        $(changeId).text(opposite.health);
+
+                        if(opposite.health <= 0){
+                            opposite.health = 0;
+                            opposite.updateHealth();
+                            board.gameEnded = true;
+                            board.updateUIElement();
+                            Util.showInfo("Game Over", player.name + " won the game!", false);
+                            return;
+                        }
+
+                        
                         clearTimeout(timeout);
                     }, 1500);
 

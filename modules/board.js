@@ -15,7 +15,7 @@ class Board {
         this.playerTwo = new Player(2,"p2", new Weapon('Ordo',10 ,'img/ordo.png'), 'img/player2.png',"",{top:0, bottom:180, left:-90, right:90, lastValue: 0, dirStr:"top"});
         // this.playerTwo.direction = {top:0, bottom:180, left:-90, right:90, lastValue: 0};
         this.activePlayer = "";
-
+        this.gameEnded = false;
         this.init();
     }
 
@@ -70,6 +70,7 @@ class Board {
     }
 
     initUI(){
+        // this.showSplash();
         let table = document.createElement('table');
         let map = this.map;
         
@@ -140,7 +141,8 @@ class Board {
                 cell.setAttribute("id",value.id);
                 cell.setAttribute("isBlank", value.isBlank);
                 cell.setAttribute("content", value.content);
-                if(typeName == "Player" || value.validMove == true){
+                cell.setAttribute("draggable", false);
+                if((typeName == "Player" && value.content == this.activePlayer) || value.validMove == true){
                     span.setAttribute("ondragover", "dragover(event)");
                     span.setAttribute("ondragenter", "dragenter(event)");
                     span.setAttribute("ondragend", "dragend(event)");
@@ -159,22 +161,51 @@ class Board {
         
         this.ui = table;
         let self = this;
+
+        
+
+        setTimeout(() => {
+            this.playerOne.updateHealth();
+            this.playerTwo.updateHealth();
+        }, 1);
+
+        // Fire on double click
+        $(function() {
+            $('#gameboard table').on('dblclick', 'tr', function(e) {
+                e.preventDefault();
+                const oppositePlayer = self.getOppositePlayer();
+                self.activePlayer.weapon.fire(self.activePlayer, oppositePlayer, self);
+            });
+        });
+
+        // Defend on right click
         $(function() {
             $('#gameboard table').on('contextmenu', 'tr', function(e) {
                 e.preventDefault();
-                self.activePlayer.weapon.fire();
-                self.activePlayer.score += 10;
-                let oppositePlayer = self.getOppositePlayer();
-                oppositePlayer.health -= 10;
-                console.log(self.getOppositePlayer().health);
-                console.log(self.activePlayer.score); 
+                const targetId = $(e.target).parent().attr("id");
+
+                if(targetId == self.activePlayer.mapId){
+                    self.activePlayer.defending = true;
+                    Util.showInfo("Defending", self.activePlayer.name + " is defending the attack!", true);
+                    console.log("Defending");
+                } else{
+                    console.log("JUst changed turn");
+                }
+                
+                self.nextTurn();
+                self.updateUIElement();
             });
         });
+
+
         
         return table;
     }
 
     updateUIElement(){
+
+      
+
         console.log("Updating.......");
         let table = document.createElement('table');
         let map = this.map;
@@ -218,7 +249,8 @@ class Board {
                 cell.setAttribute("id",value.id);
                 cell.setAttribute("isBlank", value.isBlank);
                 cell.setAttribute("content", value.content);
-                if(typeName == "Player" || value.validMove == true){
+                cell.setAttribute("draggable", false);
+                if((typeName == "Player" && value.content == this.activePlayer) || value.validMove == true && this.gameEnded == false){
                     span.setAttribute("ondragover", "dragover(event)");
                     span.setAttribute("ondragenter", "dragenter(event)");
                     span.setAttribute("ondragend", "dragend(event)");
@@ -244,11 +276,38 @@ class Board {
         this.ui = table;
         let self = this;
         $(function() {
-            $('#gameboard table').on('contextmenu', 'tr', function(e) {
+            $('#gameboard table').on('dblclick', 'tr', function(e) {
                 e.preventDefault();
-                self.activePlayer.weapon.fire();
+                const oppositePlayer = self.getOppositePlayer();
+                self.activePlayer.weapon.fire(self.activePlayer, oppositePlayer, self);
             });
         });
+
+        // Defend on right click
+        $(function() {
+            $('#gameboard table').on('contextmenu', 'tr', function(e) {
+                e.preventDefault();
+                const targetId = $(e.target).parent().attr("id");
+
+                if(targetId == self.activePlayer.mapId){
+                    self.activePlayer.defending = true;
+                    Util.showInfo("Defending", self.activePlayer.name + " is defending the attack!", true);
+                    console.log("Defending");
+                } else{
+                    console.log("JUst changed turn");
+                }
+                
+                self.nextTurn();
+                self.updateUIElement();
+            });
+        });
+
+        this.playerOne.healthTrackerUI.ui = "";
+        this.playerTwo.healthTrackerUI.ui = "";
+        setTimeout(() => {
+            this.playerOne.updateHealth();
+            this.playerTwo.updateHealth();
+        }, 1);
     }
 
     getTargetPosition(){
@@ -313,11 +372,11 @@ class Board {
     }
 
     getOppositePlayer(){
-        if(this.activePlayer == this.playerOne){
-            return this.activePlayer;
+        if(JSON.stringify(this.activePlayer) == JSON.stringify(this.playerOne)){
+            return this.playerTwo;
         }
 
-        return this.playerTwo;
+        return this.playerOne;
     }
 
     updatePlayerDirection(){
@@ -559,6 +618,30 @@ class Board {
         return obstacles;
     }
 
+    showSplash(){
+        const wrapper = document.createElement('div');
+        wrapper.classList.add("splash");
+        const img = document.createElement('img');
+        img.src = "img/splash.png";
+        wrapper.appendChild(img);
+        document.body.appendChild(wrapper);
+
+        $(wrapper).click(function(){
+            $( this ).animate({
+                opacity: "toggle"
+              }, {
+                duration: 3000,
+                specialEasing: {
+                  width: "linear",
+                  height: "easeOutBounce"
+                },
+                complete: function() {
+                  $( this ).remove();
+                }
+              });
+        });
+    }
+
     // placeElement(sourceElement, targetElement){
 
     //     let found = false;
@@ -606,6 +689,7 @@ class Board {
                         // this.pickWeapon(oldPosition, newPosition);
                       
                         this.map[index][cell].content.position = [index, cell];
+                        this.map[index][cell].content.mapId = targetElement.id;
                         // setTimeout(() => {
                         //     this.pickWeapon(oldPosition, newPosition);
                         // }, 1);
@@ -672,13 +756,13 @@ class Board {
 
         for (let index = 0; index < detectedObjects.length; index++) {
             const element = detectedObjects[index];
-            console.log("Pos ADD");
-            console.log(JSON.stringify(newPosition));
-            console.log(JSON.stringify(element.position));
-            console.log(newPosition);
-            console.log(element.position);
-            console.log(newPosition == element.position);
-            console.log(element);
+            // console.log("Pos ADD");
+            // console.log(JSON.stringify(newPosition));
+            // console.log(JSON.stringify(element.position));
+            // console.log(newPosition);
+            // console.log(element.position);
+            // console.log(newPosition == element.position);
+            // console.log(element);
             if(element.object.constructor.name == "Weapon" && JSON.stringify(newPosition) == JSON.stringify(element.position)){
                 console.log("Weapon Detected");
                 const oldWeapon = this.activePlayer.weapon;
