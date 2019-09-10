@@ -197,3 +197,8 @@ body{
 #gameboard table{
     margin: 0 auto;
 }
+
+.not-avaiable{
+    opacity: 0.2;
+    pointer-events: none;
+}
