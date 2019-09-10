@@ -1,13 +1,16 @@
 table{
     border-collapse: inherit;
-    background-color: #fff7e1;
+    background-color: #fff;
     box-sizing: initial;
+    -webkit-box-shadow: 0px 5px 12px 2px rgba(0,0,0,0.27);
+    -moz-box-shadow: 0px 5px 12px 2px rgba(0,0,0,0.27);
+    box-shadow: 0px 5px 12px 2px rgba(0,0,0,0.27);
 }
 
 table tr td{
     /* padding: 7px 40px; */
     /* border: 2px solid gray; */
-    background-color: moccasin;
+    background-color: #f3f3f3;
     transition: ease-out all 1s;
 }
 
@@ -60,8 +63,10 @@ table tr td > span {
 }
 
 .app-header{
-    background-color: #fcac00;
-    padding: 12px 17px;
+    background-color: #dedede;
+    padding: 25px 0px;
+    border-bottom: 18px solid #b4045f;
+    margin-bottom: 35px;
 }
 
 .app-header p{
@@ -69,19 +74,9 @@ table tr td > span {
 }
 
 .app-logo img{
-    margin-left: 30px;
-    margin-bottom: 10px;
-}
-
-.app-title{
-    font-weight: bold;
-    font-size: 15px;
-    color: #80003d;
-    border: 3px solid #b9004b;
-    padding: 14px;
-    border-bottom: 6px solid #a00041;
-    border-left: 11px solid #b9004b;
-    margin-left: 15px;
+    width: 40%;
+    margin: 0 auto;
+    display: block;
 }
 
 .active-player{
@@ -176,4 +171,16 @@ table tr td > span {
     45% {color: #dd1c03}
     85% {color: #cc1100}
     100% {color: #ff0037}
+}
+
+body{
+    background-color: #d8d8d8;
+}
+
+#gameboard{
+    width: 100%;
+}
+
+#gameboard table{
+    margin: 0 auto;
 }
