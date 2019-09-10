@@ -9,20 +9,18 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 window.dragover = function (e) {
     e.preventDefault();
-    e.currentTarget.classList.add("dragging");
+    e.currentTarget.parentElement.classList.add("dragging");
 };
 
 window.dragenter = function (e) {
     // e.preventDefault();
-    e.currentTarget.classList.add("dragging");
+    e.currentTarget.parentElement.classList.add("dragging");
 };
 
 window.drop = function (e) {
     e.preventDefault();
     var sourceElement = gameBoard.getElement(e.dataTransfer.getData("text/plain"));
     var targetElement = gameBoard.getElement(e.currentTarget.parentElement.id);
-    console.log(sourceElement);
-    console.log(targetElement);
 
     if (sourceElement.content != targetElement.content) {
         gameBoard.pickWeapon(sourceElement.address, targetElement.address);
@@ -33,17 +31,17 @@ window.drop = function (e) {
 };
 
 window.dragleave = function (e) {
-    e.currentTarget.classList.remove("dragging");
+    e.currentTarget.parentElement.classList.remove("dragging");
 };
 
 window.dragend = function (e) {
-    e.currentTarget.classList.remove("dragging");
+    e.currentTarget.parentElement.classList.remove("dragging");
 };
 
 window.dragstart = function (e) {
     // e.preventDefault();
     e.dataTransfer.setData("text/plain", e.currentTarget.parentElement.id);
-    e.currentTarget.classList.add("dragging");
+    e.currentTarget.parentElement.classList.add("dragging");
 };
 
 var gameBoard = new _board2.default();
