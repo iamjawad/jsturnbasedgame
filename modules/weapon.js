@@ -5,7 +5,8 @@ class Weapon{
         this.damage = damage;
         this.picture = picture;
         this.ui = this.getUI();
-        this.defend = false;    
+        this.defend = false;
+        this.attacking = false;    
     }
 
     getUI(){
@@ -26,6 +27,12 @@ class Weapon{
     
 
     fire(player = "", opposite = "", board = ""){
+
+        if (this.attacking == true){
+            return false;
+        }
+
+        this.attacking = true;
         let activePlayer = $('.active-player span img');
         let direction = $('.active-player').attr("direction");
         let changeInDirection = "";
@@ -53,7 +60,7 @@ class Weapon{
             default:
                 break;
         }
-        board.nextTurn();
+        
         let wrapper = $(document.createElement('span'));
         wrapper.css({
             position: "absolute",
@@ -102,9 +109,13 @@ class Weapon{
                             board.gameEnded = true;
                             board.updateUIElement();
                             Util.showInfo("Game Over", player.name + " won the game!", false);
+                            $('#gameboard').addClass('not-avaiable');
                             return;
                         }
 
+                        this.attacking = false;
+                        board.nextTurn();
+                        board.updateUIElement();
                         
                         clearTimeout(timeout);
                     }, 1500);

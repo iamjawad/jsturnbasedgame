@@ -1357,6 +1357,7 @@ var Weapon = function () {
         this.picture = picture;
         this.ui = this.getUI();
         this.defend = false;
+        this.attacking = false;
     }
 
     _createClass(Weapon, [{
@@ -1386,6 +1387,12 @@ var Weapon = function () {
             var opposite = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
             var board = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
 
+
+            if (this.attacking == true) {
+                return false;
+            }
+
+            this.attacking = true;
             var activePlayer = $('.active-player span img');
             var direction = $('.active-player').attr("direction");
             var changeInDirection = "";
@@ -1411,7 +1418,7 @@ var Weapon = function () {
                 default:
                     break;
             }
-            board.nextTurn();
+
             var wrapper = $(document.createElement('span'));
             wrapper.css({
                 position: "absolute",
@@ -1458,8 +1465,13 @@ var Weapon = function () {
                             board.gameEnded = true;
                             board.updateUIElement();
                             _util2.default.showInfo("Game Over", player.name + " won the game!", false);
+                            $('#gameboard').addClass('not-avaiable');
                             return;
                         }
+
+                        _this.attacking = false;
+                        board.nextTurn();
+                        board.updateUIElement();
 
                         clearTimeout(timeout);
                     }, 1500);
