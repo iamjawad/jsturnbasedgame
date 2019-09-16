@@ -2,6 +2,7 @@ import Player from './player';
 import Weapon from './weapon';
 import Obstacle from './obstacle';
 import Util from './util';
+import { type } from 'os';
 
 class Board {
     constructor() {
@@ -11,12 +12,30 @@ class Board {
         this.generateWeapons();
         let defaultWeapon = this.weapons[0];
         this.playerOne = new Player(1,"p1", new Weapon('Ordo',10 ,'img/ordo.png'), 'img/player1.png',"",{top:180, bottom:0, left:90, right:-90, lastValue: 0, dirStr:"bottom"});
-        // this.playerOne.direction = {top:180, bottom:0, left:90, right:-90, lastValue: 0};
         this.playerTwo = new Player(2,"p2", new Weapon('Ordo',10 ,'img/ordo.png'), 'img/player2.png',"",{top:0, bottom:180, left:-90, right:90, lastValue: 0, dirStr:"top"});
-        // this.playerTwo.direction = {top:0, bottom:180, left:-90, right:90, lastValue: 0};
         this.activePlayer = "";
         this.gameEnded = false;
+        this.dynamicCSS = {".vibration-ani": "{}"};
         this.init();
+    }
+
+    getDynamicCSS(){
+        let allCSS = "<style>";
+
+        for (const [selector, css] of Object.entries(this.dynamicCSS)) {
+            const trimedCSS = css.trim();
+            if(trimedCSS.startsWith("@key")){
+                allCSS += trimedCSS;
+            } else {
+                allCSS += selector + trimedCSS;
+            }
+        }
+        return allCSS + "</style>";
+    }
+
+    updateDynamicCSS(){
+        $('head > style').remove();
+        $('html > head').append(this.getDynamicCSS());
     }
 
     generateMapStructure() {
@@ -38,14 +57,6 @@ class Board {
         return arr;
     }
 
-    initEnvironment(){
-
-    }
-
-    getPlayerMoves(){
-
-    }
-
     init(){
         let playerOneLocation = [Math.floor((Math.random() * 3) + 0), Math.floor((Math.random() * 7) + 0)];
         let playerTwoLocation = [Math.floor(Math.random() * (7-4+1))+4, Math.floor((Math.random() * 7) + 0)];
@@ -57,6 +68,61 @@ class Board {
         this.placeElement(false, this.map[playerTwoLocation[0]][playerTwoLocation[1]], this.playerTwo);
         console.log(this.weapons);
         
+    }
+
+    enemyFromRange(position){
+        const enemy = this.getOppositePlayer();
+
+        if(this.map[position[0]-1][position[1]].content == enemy){
+            return "top";
+        } else if(this.map[position[0]+1][position[1]].content == enemy){
+            return "bottom";
+        } else if(this.map[position[0]][position[1]-1].content == enemy){
+            return "left";
+        } else if(this.map[position[0]][position[1]+1].content == enemy){
+            return "right";
+        } else {
+            return false;
+        }
+    }
+
+    enemyInRange(position = ""){
+        const enemy = this.getOppositePlayer();
+        const player = this.activePlayer;
+        const playerPosition = position == "" ? player.position : position;
+        const direction = player.direction.dirStr;
+        let inRange = false;
+        console.log("I go position: " + position);
+        switch (direction) {
+            case "top":
+                if(this.map[playerPosition[0]-1][playerPosition[1]].content == enemy){
+                    inRange = true;
+                }
+                break;
+            
+            case "bottom":
+                if(this.map[playerPosition[0]+1][playerPosition[1]].content == enemy){
+                    inRange = true;
+                }
+                break;
+            
+            case "left":
+                if(this.map[playerPosition[0]][playerPosition[1]-1].content == enemy){
+                    inRange = true;
+                }
+                break;
+            
+            case "right":
+                if(this.map[playerPosition[0]][playerPosition[1]+1].content == enemy){
+                    inRange = true;
+                }
+                break;
+            
+            default:
+                inRange = false;
+                break;
+        }
+        return inRange;
     }
 
     generateWeapons(){
@@ -119,10 +185,12 @@ class Board {
                     span.appendChild(value.content.ui);
                 }
 
+                if(typeName == "Player"){
+                    cell.setAttribute("direction", value.content == this.playerOne ? this.playerOne.direction.dirStr : this.playerTwo.direction.dirStr);
+                }
+
                 if(typeName == "Player" && this.activePlayer == value.content){
                     cell.classList.add("active-player");
-                    cell.setAttribute("direction", this.activePlayer.direction.dirStr);
-
                 }
 
                 if(typeName == "Obstacle"){
@@ -210,7 +278,7 @@ class Board {
         let table = document.createElement('table');
         let map = this.map;
         this.validateMoves(this.activePlayer.position);
-    
+        this.adjustRotation(false);
         let targetPosition = this.getTargetPosition();
 
         for (const row of map) {
@@ -222,16 +290,23 @@ class Board {
                 let typeName = value.content.constructor.name;
 
                 if(typeof(value.content) == "object" && value.content.ui != ""){
-                    span.appendChild(value.content.ui);
+                    if(typeName == "Player"){
+                        span.appendChild(value.content.getUi());
+                    } else {
+                        span.appendChild(value.content.ui);
+                    }
                 }
 
                 if(typeName == "Obstacle"){
                     span.classList.add("obstacle");
                 }
 
+                if(typeName == "Player"){
+                    cell.setAttribute("direction", value.content == this.playerOne ? this.playerOne.direction.dirStr : this.playerTwo.direction.dirStr);
+                }
+
                 if(typeName == "Player" && this.activePlayer == value.content){
                     cell.classList.add("active-player");
-                    cell.setAttribute("direction", this.activePlayer.direction.dirStr);
                 }
 
                 if(value.validMove == true && value.content == ""){
@@ -266,15 +341,18 @@ class Board {
             table.appendChild(tableRow);
         }
 
-        // let gameContainer = document.getElementById('gameboard');
-        // document.body.outerHTML = table.outerHTML;
         $('#gameboard').html(table.outerHTML);
 
         
         this.ui = table;
-
+        
         this.ui = table;
+
+        setTimeout(() => {
+            this.adjustRotation();
+        }, 1);
         let self = this;
+
         $(function() {
             $('#gameboard table').on('dblclick', 'tr', function(e) {
                 e.preventDefault();
@@ -299,6 +377,7 @@ class Board {
                 
                 self.nextTurn();
                 self.updateUIElement();
+                
             });
         });
 
@@ -310,6 +389,7 @@ class Board {
         }, 1);
     }
 
+    // Prepairing to depricate
     getTargetPosition(){
         let map = this.map;
         let activePlayerPosition = this.activePlayer.position;
@@ -379,61 +459,81 @@ class Board {
         return this.playerOne;
     }
 
-    updatePlayerDirection(){
-        let direction = "";
-        let map = this.map;
-        let playerPosition = this.activePlayer.position;
-        let column = playerPosition[0];
-        let row = playerPosition[1];
-        for (let index = 0; index < map[column].length; index++) {
-            const element = map[index][row];
-            // console.log(element);
-            if(this.activePlayer != element.content && element.content.constructor.name == "Player"){
-                if(column > index){
-                    this.activePlayer.direction.lastValue = this.activePlayer.direction.top;
-                    this.activePlayer.direction.dirStr = "top";
-                    let timeout = setTimeout(() => {
-                        this.rotatePlayer(this.activePlayer.direction.top);
-                        clearTimeout(timeout);
-                    }, 1);
-                } else {
-                    this.activePlayer.direction.lastValue = this.activePlayer.direction.bottom;
-                    this.activePlayer.direction.dirStr = "bottom";
-                    let timeout = setTimeout(() => {
-                        this.rotatePlayer(this.activePlayer.direction.bottom);
-                        clearTimeout(timeout);
-                    }, 1);
-                }
-                return;
+    getDirectionToEnemy(fromPosition = ""){
+        const player = this.activePlayer;
+        const position = fromPosition == "" ? player.position : fromPosition;
 
-            }
-        }
+        const enemy = this.getOppositePlayer();
+        const enemyPosition = enemy.position;
 
-        for (let index = 0; index < map[column].length; index++) {
-            const element = map[column][index];
-            
-            if(this.activePlayer != element.content && element.content.constructor.name == "Player"){
-                if(row > index){
-                    let timeout = setTimeout(() => {
-                        this.rotatePlayer(this.activePlayer.direction.left);
-                        clearTimeout(timeout);
-                    }, 1);
-                    this.activePlayer.direction.dirStr = "left";
-                    this.activePlayer.direction.lastValue = this.activePlayer.direction.left;
-                } else {
-                    let timeout = setTimeout(() => {
-                        this.rotatePlayer(this.activePlayer.direction.right);
-                        clearTimeout(timeout);
-                    }, 1);
-                    this.activePlayer.direction.dirStr = "right";
-                    this.activePlayer.direction.lastValue = this.activePlayer.direction.right;
-                }
-                return;
-
-            }
+        if(position[0] > enemyPosition[0] && position[1] == enemyPosition[1]){
+            return "top";
+        } else if(position[0] < enemyPosition[0] && position[1] == enemyPosition[1]){
+            return "bottom";
+        } else if(position[1] > enemyPosition[1] && position[0] == enemyPosition[0]){
+            return "left";
+        } else if(position[1] < enemyPosition[1] && position[0] == enemyPosition[0]){
+            return "right";
+        } else {
+            return false;
         }
 
         
+        
+    }
+
+    updatePlayerDirection(target){
+        let direction = "";
+        let map = this.map;
+        let playerPosition = this.activePlayer.position;
+        let position = target.address;
+
+        let targetRow = position[0];
+        let targetColumn = position[1];
+        const row = playerPosition[0];
+        const column = playerPosition[1];
+        console.log(target);
+        if(targetColumn < column){
+            this.activePlayer.direction.dirStr = "left";
+            this.activePlayer.direction.lastValue = this.activePlayer.direction.left;
+        } else if(targetColumn > column) {
+            this.activePlayer.direction.dirStr = "right";
+            this.activePlayer.direction.lastValue = this.activePlayer.direction.right;
+        } else if(targetRow < row){
+            this.activePlayer.direction.dirStr = "top";
+            this.activePlayer.direction.lastValue = this.activePlayer.direction.top;
+        } else if(targetRow > row){
+            this.activePlayer.direction.dirStr = "bottom";
+            this.activePlayer.direction.lastValue = this.activePlayer.direction.bottom;
+        } else {
+            return false;
+        }
+        // console.log("Target Position: " + targetPosition);
+        // console.log("Enemy in range? " + this.enemyInRange(targetPosition));
+        // const enemyDirection = this.enemyFromRange(targetPosition);
+        // if(enemyDirection != false){
+        //     console.log("Enemy in range yesssss");
+        //     const enemy = this.getOppositePlayer();
+        //     const enemyCol = enemy.position[0];
+        //     const enemyRow = enemy.position[1];
+        //     let postChange = "";
+
+            // if(enemyRow < targetRow){
+            //     postChange = "left";
+            //     this.activePlayer.direction.lastValue = this.activePlayer.direction.left;
+            // } else if(enemyRow > targetRow) {
+            //     postChange = "right";
+            //     this.activePlayer.direction.lastValue = this.activePlayer.direction.right;
+            // } else if(enemyCol < targetColumn){
+            //     postChange = "top";
+            //     this.activePlayer.direction.lastValue = this.activePlayer.direction.top;
+            // } else {
+            //     postChange = "bottom";
+            //     this.activePlayer.direction.lastValue = this.activePlayer.direction.bottom;
+            // }
+            // console.log("dsfsdfsdf: " + enemyDirection);
+            // return enemyDirection;
+        // }
 
     }
 
@@ -456,26 +556,103 @@ class Board {
 
     }
 
+    adjustRotation(rotateUI = true){
+        const enemyDirection = this.getDirectionToEnemy();
+        const player = this.activePlayer;
+
+        if(enemyDirection != false){
+            player.direction.lastValue = player.direction[enemyDirection];
+            player.direction.dirStr = enemyDirection;
+            
+            if(rotateUI == true){
+                this.rotatePlayer(player.direction[enemyDirection]);
+                $('.active-player').attr('direction',player.direction.dirStr);
+            }
+        }
+        
+        
+
+    }
+
     animateMovement(sourceElement,targetElement){
         let source = $('#' + sourceElement.id + ' span');
         let targetElm = $('#' + targetElement.id + ' span');
+        const direction = this.activePlayer.direction;
+        const player = this.activePlayer;
+        const enemyDirection = this.getDirectionToEnemy(targetElement.address);
 
-        source.animate(
-            { 
-                top: targetElm.offset().top - source.parent().offset().top, 
-                left: targetElm.offset().left - source.parent().offset().left
-            }, 
-            {
-                easing:"swing",
-                duration:3000,
-                complete: () => {
-                    this.playerOne.getUi();
-                    this.playerTwo.getUi();
-                    this.updatePlayerDirection();
-                    this.updateUIElement();
-                    // this.activePlayer.weapon.fire();
-                }
-            });
+        this.updatePlayerDirection(targetElement);
+        this.rotatePlayer(direction[direction.dirStr]);
+
+        // switch (direction.dirStr) {
+        //     case "top":
+        //         this.rotatePlayer(direction.top);
+        //         console.log("top");
+        //         break;
+        
+        //     case "bottom":
+        //         this.rotatePlayer(direction.bottom);
+        //         console.log("bottom");
+        //         break;
+        
+        //     case "left":
+        //         this.rotatePlayer(direction.left);
+        //         console.log("left");
+        //         break;
+        
+        //     case "right":
+        //         this.rotatePlayer(direction.right);
+        //         console.log("right");
+        //         break;
+        
+        //     default:
+        //         console.log("no output");
+        //         break;
+        // }        
+
+        
+
+        let animation = new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve(source.animate(
+                    {
+                        top: targetElm.offset().top - source.parent().offset().top,
+                        left: targetElm.offset().left - source.parent().offset().left
+                    },
+                    {
+                        easing: "swing",
+                        duration: 2000,
+                        complete: () => {
+                            this.playerOne.getUi();
+                            this.playerTwo.getUi();
+                            console.log("Enemy:dir:" + enemyDirection);
+                            console.log("Enemy:dirstring:" + JSON.stringify(enemyDirection));
+                            if(enemyDirection != false){
+                                player.direction.lastValue = player.direction[enemyDirection];
+                                player.direction.dirStr = enemyDirection;
+                                this.rotatePlayer(player.direction[enemyDirection]);
+
+                                setTimeout(() => {
+                                    this.nextTurn();
+                                    this.updateUIElement();
+                                }, 1500);
+                            } else {
+                                this.nextTurn();
+                                this.updateUIElement();
+                            }
+
+                            
+                            // this.nextTurn();
+                            // this.updateUIElement();
+                            
+                            console.log("Enemy in range: " + this.enemyInRange());
+                            // this.activePlayer.weapon.fire();
+                        }
+                    }));
+            }, 1000);
+        });
+        // this.rotatePlayer(this.activePlayer.direction[this.getDirectionToEnemy()]);
+
         
 
     }
@@ -642,31 +819,6 @@ class Board {
         });
     }
 
-    // placeElement(sourceElement, targetElement){
-
-    //     let found = false;
-
-    //     for (let index = 0; index < this.map.length; index++) {
-
-    //         for (let cell = 0; cell < this.map[index].length; cell++) {
-    //             const element = this.map[index][cell];
-    //             if (element.id == targetElement.id) {
-    //                 this.map[index][cell] = sourceElement;
-    //                 found = true;
-    //                 break;
-    //             }
-    //         }
-
-    //         if (found != false) {
-    //             break;
-    //         }
-
-    //     }
-
-    //     return found;
-
-    // }
-
     placeContent(location,content){
         this.map[location[0]][location[1]].content = content;
     }
@@ -682,25 +834,16 @@ class Board {
                 if (element.id == targetElement.id) {
                     const oldContent = this.map[index][cell].content;
                     this.map[index][cell].content =  content ? content : sourceElement.content;
-                    // Problem - Content Replaced Before
+                    this.map[index][cell].address = [index, cell];
                     if(element.content != undefined && element.content.constructor.name == "Player"){
                         const oldPosition = this.map[index][cell].content.position;
                         const newPosition = [index, cell];
-                        // this.pickWeapon(oldPosition, newPosition);
                       
                         this.map[index][cell].content.position = [index, cell];
                         this.map[index][cell].content.mapId = targetElement.id;
-                        // setTimeout(() => {
-                        //     this.pickWeapon(oldPosition, newPosition);
-                        // }, 1);
 
-                        // console.log(JSON.parse(JSON.stringify(sourceElement)));
-                        // console.log(sourceElement);
                     }
-                    // if(element.content != undefined && element.content.constructor.name == "Obstacle"){
-                    //     this.map[index][cell].typeName = "Obstacle";
-                    //     console.log(element.content.constructor.name);
-                    // }
+
                     if(sourceElement.id != targetElement.id){
                         sourceElement != false? sourceElement.content = "" : false;
                     }
@@ -725,30 +868,12 @@ class Board {
         const changedElement = newPosition.filter(element => !oldPosition.includes(element));
         const changedIndexPosition = newPosition.indexOf(changedElement[0]);
 
-        // const range = changedIndexPosition == 0 ? [newPosition[changedIndexPosition], newPosition[1]] : [newPosition[1], newPosition[changedIndexPosition]];
-
         let scanRange = [oldPosition, newPosition];
-        
-        // if(changedIndexPosition != -1 && changedIndexPosition == 0){
-        //     scanRange = [newPosition[changedIndexPosition], newPosition[1]];
-        // } else {
-        //     scanRange = [newPosition[1], newPosition[changedIndexPosition]];
-        // }
 
         console.log("Scan Range " + scanRange);
         
         const detectedObjects = this.objectsInRange(scanRange);
 
-        // Get Weapons from objects
-        // detectedObjects.forEach(obj => {
-        //     console.log("yoooo");
-        //     console.log(obj.object);
-        //     if(obj.object.constructor.name == "Weapon"){
-        //         console.log("Weapon Detected");
-        //     }
-        // });
-
-        // Getting random available position to place old weapon
         let randomPosition = [];
         do {
             randomPosition = Util.randomMapPosition();
@@ -756,13 +881,7 @@ class Board {
 
         for (let index = 0; index < detectedObjects.length; index++) {
             const element = detectedObjects[index];
-            // console.log("Pos ADD");
-            // console.log(JSON.stringify(newPosition));
-            // console.log(JSON.stringify(element.position));
-            // console.log(newPosition);
-            // console.log(element.position);
-            // console.log(newPosition == element.position);
-            // console.log(element);
+
             if(element.object.constructor.name == "Weapon" && JSON.stringify(newPosition) == JSON.stringify(element.position)){
                 console.log("Weapon Detected");
                 const oldWeapon = this.activePlayer.weapon;
@@ -773,23 +892,6 @@ class Board {
             }
             
         }
-
-        console.log("Detected_Objects");
-        console.log(detectedObjects);
-        console.log("Detected_Objects__END");
-
-        // this.map[newPosition[0]][newPosition[1]].content.position = newPosition;
-        // if (changedElement != [] && changedIndexPosition != -1) {
-        //     console.log("jere");
-        //     const change = (changedIndexPosition == 0 ? "row" : "column");
-        //     if (change == "row" && changedIndexPosition == 0) {
-        //         if (newPosition[0] > oldPosition[0]) {
-        //             movementRange = ["row", oldPosition[changedIndexPosition], newPosition[changedIndexPosition]];
-        //         }
-        //     }
-
-            
-        // }
     }
 
     objectsInRange(range){
@@ -806,49 +908,18 @@ class Board {
             oldRange = temp;
         }
 
-        // if(newRange[changedIndex] > oldRange[changedIndex]){}
         for (let row = oldRange[0]; row <= newRange[0]; row++) {
             const column = this.map[row];
-            console.log("row " + row);
+
             for (let col = oldRange[1]; col <= newRange[1]; col++) {
                 const iRow = this.map[row][col];
-                console.log("col " + col);
-                // element.content != undefined && element.content.constructor.name == "Player"
-                // console.log("iRow");
-                // console.log(iRow);
-                console.log("ObjectsinRange - Start");
-                console.log(JSON.parse(JSON.stringify(iRow)));
-                console.log("ObjectsinRange - end");
 
                 if(iRow != undefined && typeof iRow.content == "object"){
                     collectedObjects.push({object: iRow.content, position: [row, col]});
                 }
             }
         }
-        
 
-        // if(newRange[changedIndex] < oldRange[changedIndex]){
-        //     for (let row = oldRange[0]; row >= newRange[0]; row--) {
-        //         const column = this.map[row];
-                
-        //         for (let col = oldRange[1]; col >= newRange[1]; col--) {
-        //             const iRow = this.map[row][col];
-        //             // element.content != undefined && element.content.constructor.name == "Player"
-        //             // console.log("iRow");
-        //             // console.log(iRow);
-        //             console.log(JSON.parse(JSON.stringify(iRow)));
-    
-        //             if(iRow != undefined && typeof iRow.content == "object"){
-        //                 collectedObjects.push(iRow.content);
-        //             }
-        //         }
-        //     }
-        // }
-
-
-
-        
-        console.log(collectedObjects);
         return collectedObjects;
     }
 

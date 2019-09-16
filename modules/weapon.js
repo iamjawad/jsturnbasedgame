@@ -37,6 +37,11 @@ class Weapon{
         let direction = $('.active-player').attr("direction");
         let changeInDirection = "";
         let target = $('.locked-target');
+        const targetObj = board.getElement(target.attr('id'));
+
+        if(targetObj != "" && targetObj.content.constructor.name != "Player"){
+            return false;
+        }
 
         switch (direction) {
             case "top":
@@ -66,10 +71,10 @@ class Weapon{
             position: "absolute",
             width: "10px",
             height: "10px",
-            top: activePlayer.offset().top + 10,
-            left: activePlayer.offset().left + 10.5,
+            top: activePlayer.offset().top + 12,
+            left: activePlayer.offset().left + 12,
             borderRadius: "50%",
-            border: "8px solid #005600",
+            border: "5px solid #005600",
             boxShadow: "inset 0 52px 60px #119b00",
         });
         $('body').append(wrapper);
@@ -90,15 +95,35 @@ class Weapon{
                     
                     $('body').append(img);
                     img.attr("src","img/fire3.gif" + "?id=" + Math.random());
-                    target.find('img').addClass("vibration");
+
+                    let vibrationCSS = '\
+                    @keyframes vibration-ani{\
+                        0% {transform: rotate(' + (player.direction.lastValue -9) + 'deg)}\
+                        45% {transform: rotate(' + (player.direction.lastValue) + 'deg)}\
+                        85% {transform: rotate(' + (player.direction.lastValue -9) + 'deg)}\
+                        100% {transform: rotate(' + (player.direction.lastValue) + 'deg)}\
+                    }';
+
+
+                    if(board.enemyInRange() == true){
+                        board.dynamicCSS['.vibration-ani'] = vibrationCSS;
+                        board.updateDynamicCSS();
+                        target.find('img').addClass("vibration");
+                    }
+
                     let timeout = setTimeout(() => {
                         board.updateUIElement();
                         img.remove();
                         target.find('img').removeClass("vibration");
                        
                         // Update health
-                        if(opposite.mapId == target.attr("id")){
-                            opposite.health -= this.damage;
+                        if(opposite.mapId == target.attr("id") && board.enemyInRange() == true){
+                            if(opposite.defending == true){
+                                opposite.health -= (this.damage / 2);
+                                opposite.defending = false;
+                            } else{
+                                opposite.health -= this.damage;
+                            }
                         }
 
                         opposite.updateHealth();
@@ -115,7 +140,9 @@ class Weapon{
 
                         this.attacking = false;
                         board.nextTurn();
-                        board.updateUIElement();
+                        setTimeout(() => {
+                            board.updateUIElement();
+                        }, 1);
                         
                         clearTimeout(timeout);
                     }, 1500);

@@ -17,9 +17,9 @@ window.drop = function(e){
 
     if(sourceElement.content != targetElement.content){
         gameBoard.pickWeapon(sourceElement.address, targetElement.address);
-        gameBoard.nextTurn();
-        gameBoard.placeElement(sourceElement,targetElement);
         gameBoard.animateMovement(sourceElement, targetElement);
+        gameBoard.placeElement(sourceElement,targetElement);
+        // gameBoard.nextTurn();
     }
     
     
@@ -44,24 +44,12 @@ window.dragstart = function(e){
 
 var gameBoard = new Board();
 
+window.board = gameBoard;
+
 let table = gameBoard.initUI();
 console.log("Game Started");
 (function() {
-    // document.body.appendChild(gameBoard.ui);
     $('#gameboard').html(table.outerHTML); 
-    // gameBoard.activePlayer.weapon.fire();
-    gameBoard.updatePlayerDirection();
  })();
 
-
-
-
-
-
-// document.onload = function(){
-//   document.body.appendChild(table);  
-// }
-
-
-// document.body.appendChild(table);
 

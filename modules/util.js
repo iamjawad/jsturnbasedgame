@@ -8,7 +8,9 @@ class Util{
     }
 
     static showInfo(title = "Info", msg, autoHide = true){
+        
         const box = document.createElement('div');
+        $('#mpopup').remove();
         box.id = "mpopup";
         box.classList.add("abs-center");
 

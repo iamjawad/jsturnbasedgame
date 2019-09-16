@@ -24,9 +24,9 @@ window.drop = function (e) {
 
     if (sourceElement.content != targetElement.content) {
         gameBoard.pickWeapon(sourceElement.address, targetElement.address);
-        gameBoard.nextTurn();
-        gameBoard.placeElement(sourceElement, targetElement);
         gameBoard.animateMovement(sourceElement, targetElement);
+        gameBoard.placeElement(sourceElement, targetElement);
+        // gameBoard.nextTurn();
     }
 };
 
@@ -46,21 +46,13 @@ window.dragstart = function (e) {
 
 var gameBoard = new _board2.default();
 
+window.board = gameBoard;
+
 var table = gameBoard.initUI();
 console.log("Game Started");
 (function () {
-    // document.body.appendChild(gameBoard.ui);
     $('#gameboard').html(table.outerHTML);
-    // gameBoard.activePlayer.weapon.fire();
-    gameBoard.updatePlayerDirection();
 })();
-
-// document.onload = function(){
-//   document.body.appendChild(table);  
-// }
-
-
-// document.body.appendChild(table);
 
 },{"./modules/board":3}],2:[function(require,module,exports){
 "use strict";
@@ -140,6 +132,8 @@ Object.defineProperty(exports, "__esModule", {
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _player = require('./player');
@@ -158,6 +152,8 @@ var _util = require('./util');
 
 var _util2 = _interopRequireDefault(_util);
 
+var _os = require('os');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -172,15 +168,62 @@ var Board = function () {
         this.generateWeapons();
         var defaultWeapon = this.weapons[0];
         this.playerOne = new _player2.default(1, "p1", new _weapon2.default('Ordo', 10, 'img/ordo.png'), 'img/player1.png', "", { top: 180, bottom: 0, left: 90, right: -90, lastValue: 0, dirStr: "bottom" });
-        // this.playerOne.direction = {top:180, bottom:0, left:90, right:-90, lastValue: 0};
         this.playerTwo = new _player2.default(2, "p2", new _weapon2.default('Ordo', 10, 'img/ordo.png'), 'img/player2.png', "", { top: 0, bottom: 180, left: -90, right: 90, lastValue: 0, dirStr: "top" });
-        // this.playerTwo.direction = {top:0, bottom:180, left:-90, right:90, lastValue: 0};
         this.activePlayer = "";
         this.gameEnded = false;
+        this.dynamicCSS = { ".vibration-ani": "{}" };
         this.init();
     }
 
     _createClass(Board, [{
+        key: 'getDynamicCSS',
+        value: function getDynamicCSS() {
+            var allCSS = "<style>";
+
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = Object.entries(this.dynamicCSS)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var _ref = _step.value;
+
+                    var _ref2 = _slicedToArray(_ref, 2);
+
+                    var selector = _ref2[0];
+                    var css = _ref2[1];
+
+                    var trimedCSS = css.trim();
+                    if (trimedCSS.startsWith("@key")) {
+                        allCSS += trimedCSS;
+                    } else {
+                        allCSS += selector + trimedCSS;
+                    }
+                }
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
+                    }
+                } finally {
+                    if (_didIteratorError) {
+                        throw _iteratorError;
+                    }
+                }
+            }
+
+            return allCSS + "</style>";
+        }
+    }, {
+        key: 'updateDynamicCSS',
+        value: function updateDynamicCSS() {
+            $('head > style').remove();
+            $('html > head').append(this.getDynamicCSS());
+        }
+    }, {
         key: 'generateMapStructure',
         value: function generateMapStructure() {
             var arr = [];
@@ -201,12 +244,6 @@ var Board = function () {
             return arr;
         }
     }, {
-        key: 'initEnvironment',
-        value: function initEnvironment() {}
-    }, {
-        key: 'getPlayerMoves',
-        value: function getPlayerMoves() {}
-    }, {
         key: 'init',
         value: function init() {
             var playerOneLocation = [Math.floor(Math.random() * 3 + 0), Math.floor(Math.random() * 7 + 0)];
@@ -218,6 +255,65 @@ var Board = function () {
             this.placeElement(false, this.map[playerOneLocation[0]][playerOneLocation[1]], this.playerOne);
             this.placeElement(false, this.map[playerTwoLocation[0]][playerTwoLocation[1]], this.playerTwo);
             console.log(this.weapons);
+        }
+    }, {
+        key: 'enemyFromRange',
+        value: function enemyFromRange(position) {
+            var enemy = this.getOppositePlayer();
+
+            if (this.map[position[0] - 1][position[1]].content == enemy) {
+                return "top";
+            } else if (this.map[position[0] + 1][position[1]].content == enemy) {
+                return "bottom";
+            } else if (this.map[position[0]][position[1] - 1].content == enemy) {
+                return "left";
+            } else if (this.map[position[0]][position[1] + 1].content == enemy) {
+                return "right";
+            } else {
+                return false;
+            }
+        }
+    }, {
+        key: 'enemyInRange',
+        value: function enemyInRange() {
+            var position = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+
+            var enemy = this.getOppositePlayer();
+            var player = this.activePlayer;
+            var playerPosition = position == "" ? player.position : position;
+            var direction = player.direction.dirStr;
+            var inRange = false;
+            console.log("I go position: " + position);
+            switch (direction) {
+                case "top":
+                    if (this.map[playerPosition[0] - 1][playerPosition[1]].content == enemy) {
+                        inRange = true;
+                    }
+                    break;
+
+                case "bottom":
+                    if (this.map[playerPosition[0] + 1][playerPosition[1]].content == enemy) {
+                        inRange = true;
+                    }
+                    break;
+
+                case "left":
+                    if (this.map[playerPosition[0]][playerPosition[1] - 1].content == enemy) {
+                        inRange = true;
+                    }
+                    break;
+
+                case "right":
+                    if (this.map[playerPosition[0]][playerPosition[1] + 1].content == enemy) {
+                        inRange = true;
+                    }
+                    break;
+
+                default:
+                    inRange = false;
+                    break;
+            }
+            return inRange;
         }
     }, {
         key: 'generateWeapons',
@@ -241,13 +337,13 @@ var Board = function () {
 
             // Placing Obstacles on map
             var obstacles = this.generateObstacles(10);
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
 
             try {
-                for (var _iterator = obstacles[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var obstacle = _step.value;
+                for (var _iterator2 = obstacles[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var obstacle = _step2.value;
 
                     var randomLocation = _util2.default.randomMapPosition();
 
@@ -261,29 +357,29 @@ var Board = function () {
                     this.map[randomLocation[0]][randomLocation[1]].validMove = false;
                 }
             } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion && _iterator.return) {
-                        _iterator.return();
+                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                        _iterator2.return();
                     }
                 } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
                     }
                 }
             }
 
             this.validateMoves(this.activePlayer.position);
             // Placing Weapons
-            var _iteratorNormalCompletion2 = true;
-            var _didIteratorError2 = false;
-            var _iteratorError2 = undefined;
+            var _iteratorNormalCompletion3 = true;
+            var _didIteratorError3 = false;
+            var _iteratorError3 = undefined;
 
             try {
-                for (var _iterator2 = this.weapons[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                    var weapon = _step2.value;
+                for (var _iterator3 = this.weapons[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    var weapon = _step3.value;
 
                     var randomLocation = _util2.default.randomMapPosition();
 
@@ -296,16 +392,16 @@ var Board = function () {
                     // this.map[randomLocation[0]][randomLocation[1]].validMove = false;
                 }
             } catch (err) {
-                _didIteratorError2 = true;
-                _iteratorError2 = err;
+                _didIteratorError3 = true;
+                _iteratorError3 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                        _iterator2.return();
+                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                        _iterator3.return();
                     }
                 } finally {
-                    if (_didIteratorError2) {
-                        throw _iteratorError2;
+                    if (_didIteratorError3) {
+                        throw _iteratorError3;
                     }
                 }
             }
@@ -324,9 +420,12 @@ var Board = function () {
                         span.appendChild(value.content.ui);
                     }
 
+                    if (typeName == "Player") {
+                        cell.setAttribute("direction", value.content == _this.playerOne ? _this.playerOne.direction.dirStr : _this.playerTwo.direction.dirStr);
+                    }
+
                     if (typeName == "Player" && _this.activePlayer == value.content) {
                         cell.classList.add("active-player");
-                        cell.setAttribute("direction", _this.activePlayer.direction.dirStr);
                     }
 
                     if (typeName == "Obstacle") {
@@ -363,27 +462,27 @@ var Board = function () {
                 table.appendChild(tableRow);
             };
 
-            var _iteratorNormalCompletion3 = true;
-            var _didIteratorError3 = false;
-            var _iteratorError3 = undefined;
+            var _iteratorNormalCompletion4 = true;
+            var _didIteratorError4 = false;
+            var _iteratorError4 = undefined;
 
             try {
-                for (var _iterator3 = map[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                    var row = _step3.value;
+                for (var _iterator4 = map[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                    var row = _step4.value;
 
                     _loop(row);
                 }
             } catch (err) {
-                _didIteratorError3 = true;
-                _iteratorError3 = err;
+                _didIteratorError4 = true;
+                _iteratorError4 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                        _iterator3.return();
+                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                        _iterator4.return();
                     }
                 } finally {
-                    if (_didIteratorError3) {
-                        throw _iteratorError3;
+                    if (_didIteratorError4) {
+                        throw _iteratorError4;
                     }
                 }
             }
@@ -435,7 +534,7 @@ var Board = function () {
             var table = document.createElement('table');
             var map = this.map;
             this.validateMoves(this.activePlayer.position);
-
+            this.adjustRotation(false);
             var targetPosition = this.getTargetPosition();
 
             var _loop2 = function _loop2(row) {
@@ -447,16 +546,23 @@ var Board = function () {
                     var typeName = value.content.constructor.name;
 
                     if (_typeof(value.content) == "object" && value.content.ui != "") {
-                        span.appendChild(value.content.ui);
+                        if (typeName == "Player") {
+                            span.appendChild(value.content.getUi());
+                        } else {
+                            span.appendChild(value.content.ui);
+                        }
                     }
 
                     if (typeName == "Obstacle") {
                         span.classList.add("obstacle");
                     }
 
+                    if (typeName == "Player") {
+                        cell.setAttribute("direction", value.content == _this2.playerOne ? _this2.playerOne.direction.dirStr : _this2.playerTwo.direction.dirStr);
+                    }
+
                     if (typeName == "Player" && _this2.activePlayer == value.content) {
                         cell.classList.add("active-player");
-                        cell.setAttribute("direction", _this2.activePlayer.direction.dirStr);
                     }
 
                     if (value.validMove == true && value.content == "") {
@@ -491,30 +597,27 @@ var Board = function () {
                 table.appendChild(tableRow);
             };
 
-            var _iteratorNormalCompletion4 = true;
-            var _didIteratorError4 = false;
-            var _iteratorError4 = undefined;
+            var _iteratorNormalCompletion5 = true;
+            var _didIteratorError5 = false;
+            var _iteratorError5 = undefined;
 
             try {
-                for (var _iterator4 = map[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                    var row = _step4.value;
+                for (var _iterator5 = map[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                    var row = _step5.value;
 
                     _loop2(row);
                 }
-
-                // let gameContainer = document.getElementById('gameboard');
-                // document.body.outerHTML = table.outerHTML;
             } catch (err) {
-                _didIteratorError4 = true;
-                _iteratorError4 = err;
+                _didIteratorError5 = true;
+                _iteratorError5 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                        _iterator4.return();
+                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                        _iterator5.return();
                     }
                 } finally {
-                    if (_didIteratorError4) {
-                        throw _iteratorError4;
+                    if (_didIteratorError5) {
+                        throw _iteratorError5;
                     }
                 }
             }
@@ -524,7 +627,12 @@ var Board = function () {
             this.ui = table;
 
             this.ui = table;
+
+            setTimeout(function () {
+                _this2.adjustRotation();
+            }, 1);
             var self = this;
+
             $(function () {
                 $('#gameboard table').on('dblclick', 'tr', function (e) {
                     e.preventDefault();
@@ -559,6 +667,9 @@ var Board = function () {
                 _this2.playerTwo.updateHealth();
             }, 1);
         }
+
+        // Prepairing to depricate
+
     }, {
         key: 'getTargetPosition',
         value: function getTargetPosition() {
@@ -627,68 +738,82 @@ var Board = function () {
             return this.playerOne;
         }
     }, {
-        key: 'updatePlayerDirection',
-        value: function updatePlayerDirection() {
-            var _this3 = this;
+        key: 'getDirectionToEnemy',
+        value: function getDirectionToEnemy() {
+            var fromPosition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
 
+            var player = this.activePlayer;
+            var position = fromPosition == "" ? player.position : fromPosition;
+
+            var enemy = this.getOppositePlayer();
+            var enemyPosition = enemy.position;
+
+            if (position[0] > enemyPosition[0] && position[1] == enemyPosition[1]) {
+                return "top";
+            } else if (position[0] < enemyPosition[0] && position[1] == enemyPosition[1]) {
+                return "bottom";
+            } else if (position[1] > enemyPosition[1] && position[0] == enemyPosition[0]) {
+                return "left";
+            } else if (position[1] < enemyPosition[1] && position[0] == enemyPosition[0]) {
+                return "right";
+            } else {
+                return false;
+            }
+        }
+    }, {
+        key: 'updatePlayerDirection',
+        value: function updatePlayerDirection(target) {
             var direction = "";
             var map = this.map;
             var playerPosition = this.activePlayer.position;
-            var column = playerPosition[0];
-            var row = playerPosition[1];
-            for (var index = 0; index < map[column].length; index++) {
-                var element = map[index][row];
-                // console.log(element);
-                if (this.activePlayer != element.content && element.content.constructor.name == "Player") {
-                    if (column > index) {
-                        (function () {
-                            _this3.activePlayer.direction.lastValue = _this3.activePlayer.direction.top;
-                            _this3.activePlayer.direction.dirStr = "top";
-                            var timeout = setTimeout(function () {
-                                _this3.rotatePlayer(_this3.activePlayer.direction.top);
-                                clearTimeout(timeout);
-                            }, 1);
-                        })();
-                    } else {
-                        (function () {
-                            _this3.activePlayer.direction.lastValue = _this3.activePlayer.direction.bottom;
-                            _this3.activePlayer.direction.dirStr = "bottom";
-                            var timeout = setTimeout(function () {
-                                _this3.rotatePlayer(_this3.activePlayer.direction.bottom);
-                                clearTimeout(timeout);
-                            }, 1);
-                        })();
-                    }
-                    return;
-                }
-            }
+            var position = target.address;
 
-            for (var _index4 = 0; _index4 < map[column].length; _index4++) {
-                var _element4 = map[column][_index4];
-
-                if (this.activePlayer != _element4.content && _element4.content.constructor.name == "Player") {
-                    if (row > _index4) {
-                        (function () {
-                            var timeout = setTimeout(function () {
-                                _this3.rotatePlayer(_this3.activePlayer.direction.left);
-                                clearTimeout(timeout);
-                            }, 1);
-                            _this3.activePlayer.direction.dirStr = "left";
-                            _this3.activePlayer.direction.lastValue = _this3.activePlayer.direction.left;
-                        })();
-                    } else {
-                        (function () {
-                            var timeout = setTimeout(function () {
-                                _this3.rotatePlayer(_this3.activePlayer.direction.right);
-                                clearTimeout(timeout);
-                            }, 1);
-                            _this3.activePlayer.direction.dirStr = "right";
-                            _this3.activePlayer.direction.lastValue = _this3.activePlayer.direction.right;
-                        })();
-                    }
-                    return;
-                }
+            var targetRow = position[0];
+            var targetColumn = position[1];
+            var row = playerPosition[0];
+            var column = playerPosition[1];
+            console.log(target);
+            if (targetColumn < column) {
+                this.activePlayer.direction.dirStr = "left";
+                this.activePlayer.direction.lastValue = this.activePlayer.direction.left;
+            } else if (targetColumn > column) {
+                this.activePlayer.direction.dirStr = "right";
+                this.activePlayer.direction.lastValue = this.activePlayer.direction.right;
+            } else if (targetRow < row) {
+                this.activePlayer.direction.dirStr = "top";
+                this.activePlayer.direction.lastValue = this.activePlayer.direction.top;
+            } else if (targetRow > row) {
+                this.activePlayer.direction.dirStr = "bottom";
+                this.activePlayer.direction.lastValue = this.activePlayer.direction.bottom;
+            } else {
+                return false;
             }
+            // console.log("Target Position: " + targetPosition);
+            // console.log("Enemy in range? " + this.enemyInRange(targetPosition));
+            // const enemyDirection = this.enemyFromRange(targetPosition);
+            // if(enemyDirection != false){
+            //     console.log("Enemy in range yesssss");
+            //     const enemy = this.getOppositePlayer();
+            //     const enemyCol = enemy.position[0];
+            //     const enemyRow = enemy.position[1];
+            //     let postChange = "";
+
+            // if(enemyRow < targetRow){
+            //     postChange = "left";
+            //     this.activePlayer.direction.lastValue = this.activePlayer.direction.left;
+            // } else if(enemyRow > targetRow) {
+            //     postChange = "right";
+            //     this.activePlayer.direction.lastValue = this.activePlayer.direction.right;
+            // } else if(enemyCol < targetColumn){
+            //     postChange = "top";
+            //     this.activePlayer.direction.lastValue = this.activePlayer.direction.top;
+            // } else {
+            //     postChange = "bottom";
+            //     this.activePlayer.direction.lastValue = this.activePlayer.direction.bottom;
+            // }
+            // console.log("dsfsdfsdf: " + enemyDirection);
+            // return enemyDirection;
+            // }
         }
     }, {
         key: 'rotatePlayer',
@@ -710,27 +835,102 @@ var Board = function () {
             return css;
         }
     }, {
+        key: 'adjustRotation',
+        value: function adjustRotation() {
+            var rotateUI = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+            var enemyDirection = this.getDirectionToEnemy();
+            var player = this.activePlayer;
+
+            if (enemyDirection != false) {
+                player.direction.lastValue = player.direction[enemyDirection];
+                player.direction.dirStr = enemyDirection;
+
+                if (rotateUI == true) {
+                    this.rotatePlayer(player.direction[enemyDirection]);
+                    $('.active-player').attr('direction', player.direction.dirStr);
+                }
+            }
+        }
+    }, {
         key: 'animateMovement',
         value: function animateMovement(sourceElement, targetElement) {
-            var _this4 = this;
+            var _this3 = this;
 
             var source = $('#' + sourceElement.id + ' span');
             var targetElm = $('#' + targetElement.id + ' span');
+            var direction = this.activePlayer.direction;
+            var player = this.activePlayer;
+            var enemyDirection = this.getDirectionToEnemy(targetElement.address);
 
-            source.animate({
-                top: targetElm.offset().top - source.parent().offset().top,
-                left: targetElm.offset().left - source.parent().offset().left
-            }, {
-                easing: "swing",
-                duration: 3000,
-                complete: function complete() {
-                    _this4.playerOne.getUi();
-                    _this4.playerTwo.getUi();
-                    _this4.updatePlayerDirection();
-                    _this4.updateUIElement();
-                    // this.activePlayer.weapon.fire();
-                }
+            this.updatePlayerDirection(targetElement);
+            this.rotatePlayer(direction[direction.dirStr]);
+
+            // switch (direction.dirStr) {
+            //     case "top":
+            //         this.rotatePlayer(direction.top);
+            //         console.log("top");
+            //         break;
+
+            //     case "bottom":
+            //         this.rotatePlayer(direction.bottom);
+            //         console.log("bottom");
+            //         break;
+
+            //     case "left":
+            //         this.rotatePlayer(direction.left);
+            //         console.log("left");
+            //         break;
+
+            //     case "right":
+            //         this.rotatePlayer(direction.right);
+            //         console.log("right");
+            //         break;
+
+            //     default:
+            //         console.log("no output");
+            //         break;
+            // }        
+
+
+            var animation = new Promise(function (resolve, reject) {
+                setTimeout(function () {
+                    resolve(source.animate({
+                        top: targetElm.offset().top - source.parent().offset().top,
+                        left: targetElm.offset().left - source.parent().offset().left
+                    }, {
+                        easing: "swing",
+                        duration: 2000,
+                        complete: function complete() {
+                            _this3.playerOne.getUi();
+                            _this3.playerTwo.getUi();
+                            console.log("Enemy:dir:" + enemyDirection);
+                            console.log("Enemy:dirstring:" + JSON.stringify(enemyDirection));
+                            if (enemyDirection != false) {
+                                player.direction.lastValue = player.direction[enemyDirection];
+                                player.direction.dirStr = enemyDirection;
+                                _this3.rotatePlayer(player.direction[enemyDirection]);
+
+                                setTimeout(function () {
+                                    _this3.nextTurn();
+                                    _this3.updateUIElement();
+                                }, 1500);
+                            } else {
+                                _this3.nextTurn();
+                                _this3.updateUIElement();
+                            }
+
+                            // this.nextTurn();
+                            // this.updateUIElement();
+
+                            console.log("Enemy in range: " + _this3.enemyInRange());
+                            // this.activePlayer.weapon.fire();
+                        }
+                    }));
+                }, 1000);
             });
+            // this.rotatePlayer(this.activePlayer.direction[this.getDirectionToEnemy()]);
+
         }
     }, {
         key: 'nextTurn',
@@ -893,32 +1093,6 @@ var Board = function () {
                 });
             });
         }
-
-        // placeElement(sourceElement, targetElement){
-
-        //     let found = false;
-
-        //     for (let index = 0; index < this.map.length; index++) {
-
-        //         for (let cell = 0; cell < this.map[index].length; cell++) {
-        //             const element = this.map[index][cell];
-        //             if (element.id == targetElement.id) {
-        //                 this.map[index][cell] = sourceElement;
-        //                 found = true;
-        //                 break;
-        //             }
-        //         }
-
-        //         if (found != false) {
-        //             break;
-        //         }
-
-        //     }
-
-        //     return found;
-
-        // }
-
     }, {
         key: 'placeContent',
         value: function placeContent(location, content) {
@@ -942,25 +1116,15 @@ var Board = function () {
                     if (element.id == targetElement.id) {
                         var oldContent = this.map[index][cell].content;
                         this.map[index][cell].content = content ? content : sourceElement.content;
-                        // Problem - Content Replaced Before
+                        this.map[index][cell].address = [index, cell];
                         if (element.content != undefined && element.content.constructor.name == "Player") {
                             var oldPosition = this.map[index][cell].content.position;
                             var newPosition = [index, cell];
-                            // this.pickWeapon(oldPosition, newPosition);
 
                             this.map[index][cell].content.position = [index, cell];
                             this.map[index][cell].content.mapId = targetElement.id;
-                            // setTimeout(() => {
-                            //     this.pickWeapon(oldPosition, newPosition);
-                            // }, 1);
-
-                            // console.log(JSON.parse(JSON.stringify(sourceElement)));
-                            // console.log(sourceElement);
                         }
-                        // if(element.content != undefined && element.content.constructor.name == "Obstacle"){
-                        //     this.map[index][cell].typeName = "Obstacle";
-                        //     console.log(element.content.constructor.name);
-                        // }
+
                         if (sourceElement.id != targetElement.id) {
                             sourceElement != false ? sourceElement.content = "" : false;
                         }
@@ -986,30 +1150,12 @@ var Board = function () {
             });
             var changedIndexPosition = newPosition.indexOf(changedElement[0]);
 
-            // const range = changedIndexPosition == 0 ? [newPosition[changedIndexPosition], newPosition[1]] : [newPosition[1], newPosition[changedIndexPosition]];
-
             var scanRange = [oldPosition, newPosition];
-
-            // if(changedIndexPosition != -1 && changedIndexPosition == 0){
-            //     scanRange = [newPosition[changedIndexPosition], newPosition[1]];
-            // } else {
-            //     scanRange = [newPosition[1], newPosition[changedIndexPosition]];
-            // }
 
             console.log("Scan Range " + scanRange);
 
             var detectedObjects = this.objectsInRange(scanRange);
 
-            // Get Weapons from objects
-            // detectedObjects.forEach(obj => {
-            //     console.log("yoooo");
-            //     console.log(obj.object);
-            //     if(obj.object.constructor.name == "Weapon"){
-            //         console.log("Weapon Detected");
-            //     }
-            // });
-
-            // Getting random available position to place old weapon
             var randomPosition = [];
             do {
                 randomPosition = _util2.default.randomMapPosition();
@@ -1017,13 +1163,7 @@ var Board = function () {
 
             for (var index = 0; index < detectedObjects.length; index++) {
                 var element = detectedObjects[index];
-                // console.log("Pos ADD");
-                // console.log(JSON.stringify(newPosition));
-                // console.log(JSON.stringify(element.position));
-                // console.log(newPosition);
-                // console.log(element.position);
-                // console.log(newPosition == element.position);
-                // console.log(element);
+
                 if (element.object.constructor.name == "Weapon" && JSON.stringify(newPosition) == JSON.stringify(element.position)) {
                     console.log("Weapon Detected");
                     var oldWeapon = this.activePlayer.weapon;
@@ -1033,23 +1173,6 @@ var Board = function () {
                     break;
                 }
             }
-
-            console.log("Detected_Objects");
-            console.log(detectedObjects);
-            console.log("Detected_Objects__END");
-
-            // this.map[newPosition[0]][newPosition[1]].content.position = newPosition;
-            // if (changedElement != [] && changedIndexPosition != -1) {
-            //     console.log("jere");
-            //     const change = (changedIndexPosition == 0 ? "row" : "column");
-            //     if (change == "row" && changedIndexPosition == 0) {
-            //         if (newPosition[0] > oldPosition[0]) {
-            //             movementRange = ["row", oldPosition[changedIndexPosition], newPosition[changedIndexPosition]];
-            //         }
-            //     }
-
-
-            // }
         }
     }, {
         key: 'objectsInRange',
@@ -1069,19 +1192,11 @@ var Board = function () {
                 oldRange = temp;
             }
 
-            // if(newRange[changedIndex] > oldRange[changedIndex]){}
             for (var row = oldRange[0]; row <= newRange[0]; row++) {
                 var column = this.map[row];
-                console.log("row " + row);
+
                 for (var col = oldRange[1]; col <= newRange[1]; col++) {
                     var iRow = this.map[row][col];
-                    console.log("col " + col);
-                    // element.content != undefined && element.content.constructor.name == "Player"
-                    // console.log("iRow");
-                    // console.log(iRow);
-                    console.log("ObjectsinRange - Start");
-                    console.log(JSON.parse(JSON.stringify(iRow)));
-                    console.log("ObjectsinRange - end");
 
                     if (iRow != undefined && _typeof(iRow.content) == "object") {
                         collectedObjects.push({ object: iRow.content, position: [row, col] });
@@ -1089,26 +1204,6 @@ var Board = function () {
                 }
             }
 
-            // if(newRange[changedIndex] < oldRange[changedIndex]){
-            //     for (let row = oldRange[0]; row >= newRange[0]; row--) {
-            //         const column = this.map[row];
-
-            //         for (let col = oldRange[1]; col >= newRange[1]; col--) {
-            //             const iRow = this.map[row][col];
-            //             // element.content != undefined && element.content.constructor.name == "Player"
-            //             // console.log("iRow");
-            //             // console.log(iRow);
-            //             console.log(JSON.parse(JSON.stringify(iRow)));
-
-            //             if(iRow != undefined && typeof iRow.content == "object"){
-            //                 collectedObjects.push(iRow.content);
-            //             }
-            //         }
-            //     }
-            // }
-
-
-            console.log(collectedObjects);
             return collectedObjects;
         }
     }, {
@@ -1144,7 +1239,7 @@ var Board = function () {
 
 exports.default = Board;
 
-},{"./obstacle":4,"./player":5,"./util":6,"./weapon":7}],4:[function(require,module,exports){
+},{"./obstacle":4,"./player":5,"./util":6,"./weapon":7,"os":8}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1264,7 +1359,7 @@ var Player = function () {
 exports.default = Player;
 
 },{"./TinyTracker":2}],6:[function(require,module,exports){
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
@@ -1280,7 +1375,7 @@ var Util = function () {
     }
 
     _createClass(Util, null, [{
-        key: "randomMapPosition",
+        key: 'randomMapPosition',
         value: function randomMapPosition() {
             var minRow = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
             var maxRow = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 7;
@@ -1293,13 +1388,15 @@ var Util = function () {
             return [row, col];
         }
     }, {
-        key: "showInfo",
+        key: 'showInfo',
         value: function showInfo() {
             var title = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "Info";
             var msg = arguments[1];
             var autoHide = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
+
             var box = document.createElement('div');
+            $('#mpopup').remove();
             box.id = "mpopup";
             box.classList.add("abs-center");
 
@@ -1397,6 +1494,11 @@ var Weapon = function () {
             var direction = $('.active-player').attr("direction");
             var changeInDirection = "";
             var target = $('.locked-target');
+            var targetObj = board.getElement(target.attr('id'));
+
+            if (targetObj != "" && targetObj.content.constructor.name != "Player") {
+                return false;
+            }
 
             switch (direction) {
                 case "top":
@@ -1424,10 +1526,10 @@ var Weapon = function () {
                 position: "absolute",
                 width: "10px",
                 height: "10px",
-                top: activePlayer.offset().top + 10,
-                left: activePlayer.offset().left + 10.5,
+                top: activePlayer.offset().top + 12,
+                left: activePlayer.offset().left + 12,
                 borderRadius: "50%",
-                border: "8px solid #005600",
+                border: "5px solid #005600",
                 boxShadow: "inset 0 52px 60px #119b00"
             });
             $('body').append(wrapper);
@@ -1446,15 +1548,34 @@ var Weapon = function () {
 
                     $('body').append(img);
                     img.attr("src", "img/fire3.gif" + "?id=" + Math.random());
-                    target.find('img').addClass("vibration");
+
+                    var vibrationCSS = '\
+                    @keyframes vibration-ani{\
+                        0% {transform: rotate(' + (player.direction.lastValue - 9) + 'deg)}\
+                        45% {transform: rotate(' + player.direction.lastValue + 'deg)}\
+                        85% {transform: rotate(' + (player.direction.lastValue - 9) + 'deg)}\
+                        100% {transform: rotate(' + player.direction.lastValue + 'deg)}\
+                    }';
+
+                    if (board.enemyInRange() == true) {
+                        board.dynamicCSS['.vibration-ani'] = vibrationCSS;
+                        board.updateDynamicCSS();
+                        target.find('img').addClass("vibration");
+                    }
+
                     var timeout = setTimeout(function () {
                         board.updateUIElement();
                         img.remove();
                         target.find('img').removeClass("vibration");
 
                         // Update health
-                        if (opposite.mapId == target.attr("id")) {
-                            opposite.health -= _this.damage;
+                        if (opposite.mapId == target.attr("id") && board.enemyInRange() == true) {
+                            if (opposite.defending == true) {
+                                opposite.health -= _this.damage / 2;
+                                opposite.defending = false;
+                            } else {
+                                opposite.health -= _this.damage;
+                            }
                         }
 
                         opposite.updateHealth();
@@ -1471,7 +1592,9 @@ var Weapon = function () {
 
                         _this.attacking = false;
                         board.nextTurn();
-                        board.updateUIElement();
+                        setTimeout(function () {
+                            board.updateUIElement();
+                        }, 1);
 
                         clearTimeout(timeout);
                     }, 1500);
@@ -1485,4 +1608,55 @@ var Weapon = function () {
 
 exports.default = Weapon;
 
-},{"./util":6}]},{},[1]);
+},{"./util":6}],8:[function(require,module,exports){
+exports.endianness = function () { return 'LE' };
+
+exports.hostname = function () {
+    if (typeof location !== 'undefined') {
+        return location.hostname
+    }
+    else return '';
+};
+
+exports.loadavg = function () { return [] };
+
+exports.uptime = function () { return 0 };
+
+exports.freemem = function () {
+    return Number.MAX_VALUE;
+};
+
+exports.totalmem = function () {
+    return Number.MAX_VALUE;
+};
+
+exports.cpus = function () { return [] };
+
+exports.type = function () { return 'Browser' };
+
+exports.release = function () {
+    if (typeof navigator !== 'undefined') {
+        return navigator.appVersion;
+    }
+    return '';
+};
+
+exports.networkInterfaces
+= exports.getNetworkInterfaces
+= function () { return {} };
+
+exports.arch = function () { return 'javascript' };
+
+exports.platform = function () { return 'browser' };
+
+exports.tmpdir = exports.tmpDir = function () {
+    return '/tmp';
+};
+
+exports.EOL = '\n';
+
+exports.homedir = function () {
+	return '/'
+};
+
+},{}]},{},[1]);
