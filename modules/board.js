@@ -65,9 +65,7 @@ class Board {
         this.playerOne.position = [playerOneLocation[0],playerOneLocation[1]];
         this.playerTwo.position = [playerTwoLocation[0],playerTwoLocation[1]];
         this.placeElement(false, this.map[playerOneLocation[0]][playerOneLocation[1]], this.playerOne);
-        this.placeElement(false, this.map[playerTwoLocation[0]][playerTwoLocation[1]], this.playerTwo);
-        console.log(this.weapons);
-        
+        this.placeElement(false, this.map[playerTwoLocation[0]][playerTwoLocation[1]], this.playerTwo);       
     }
 
     enemyFromRange(position){
@@ -126,7 +124,6 @@ class Board {
     }
 
     generateWeapons(){
-        // let ordo = new Weapon('Ordo',10 ,'img/ordo.png');
         let estes = new Weapon('Estes Mini', 15, 'img/EstesMini.png');
         let fab = new Weapon('FAB-500', 20, 'img/FAB-500.png');
         let sion = new Weapon('Sion', 25, 'img/sion.png');
@@ -136,7 +133,7 @@ class Board {
     }
 
     initUI(){
-        // this.showSplash();
+        this.showSplash();
         let table = document.createElement('table');
         let map = this.map;
         
@@ -152,12 +149,11 @@ class Board {
 
             obstacle.ui = "";
             this.placeElement(false ,this.map[randomLocation[0]][randomLocation[1]], obstacle);
-            this.map[randomLocation[0]][randomLocation[1]].content = obstacle;
             this.map[randomLocation[0]][randomLocation[1]].validMove = false;
-
-
         }
+
         this.validateMoves(this.activePlayer.position);
+
         // Placing Weapons
         for (const weapon of this.weapons) {
             let randomLocation = Util.randomMapPosition();
@@ -167,8 +163,6 @@ class Board {
             } while (this.map[randomLocation[0]][randomLocation[1]].content != "");
 
             this.placeElement(false ,this.map[randomLocation[0]][randomLocation[1]], weapon);
-            // this.map[randomLocation[0]][randomLocation[1]].content = obstacle;
-            // this.map[randomLocation[0]][randomLocation[1]].validMove = false;
         }
 
         let targetPosition = this.getTargetPosition();
@@ -272,9 +266,6 @@ class Board {
 
     updateUIElement(){
 
-      
-
-        console.log("Updating.......");
         let table = document.createElement('table');
         let map = this.map;
         this.validateMoves(this.activePlayer.position);
@@ -397,6 +388,7 @@ class Board {
         let column = activePlayerPosition[1];
         let activePlayerDirection = this.activePlayer.direction.dirStr;
 
+        // --|--
         switch (activePlayerDirection) {
             case "top":
                 for (let index = row - 1 ; index >= 0; index--) {

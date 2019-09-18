@@ -6,7 +6,7 @@ window.dragover = function(e){
 }
 
 window.dragenter = function(e){
-    // e.preventDefault();
+    e.preventDefault();
     e.currentTarget.parentElement.classList.add("dragging");
 }
 
@@ -48,6 +48,7 @@ window.board = gameBoard;
 
 let table = gameBoard.initUI();
 console.log("Game Started");
+console.log(board.map);
 (function() {
     $('#gameboard').html(table.outerHTML); 
  })();

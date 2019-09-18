@@ -13,7 +13,7 @@ window.dragover = function (e) {
 };
 
 window.dragenter = function (e) {
-    // e.preventDefault();
+    e.preventDefault();
     e.currentTarget.parentElement.classList.add("dragging");
 };
 
@@ -50,6 +50,7 @@ window.board = gameBoard;
 
 var table = gameBoard.initUI();
 console.log("Game Started");
+console.log(board.map);
 (function () {
     $('#gameboard').html(table.outerHTML);
 })();
@@ -254,7 +255,6 @@ var Board = function () {
             this.playerTwo.position = [playerTwoLocation[0], playerTwoLocation[1]];
             this.placeElement(false, this.map[playerOneLocation[0]][playerOneLocation[1]], this.playerOne);
             this.placeElement(false, this.map[playerTwoLocation[0]][playerTwoLocation[1]], this.playerTwo);
-            console.log(this.weapons);
         }
     }, {
         key: 'enemyFromRange',
@@ -318,7 +318,6 @@ var Board = function () {
     }, {
         key: 'generateWeapons',
         value: function generateWeapons() {
-            // let ordo = new Weapon('Ordo',10 ,'img/ordo.png');
             var estes = new _weapon2.default('Estes Mini', 15, 'img/EstesMini.png');
             var fab = new _weapon2.default('FAB-500', 20, 'img/FAB-500.png');
             var sion = new _weapon2.default('Sion', 25, 'img/sion.png');
@@ -331,7 +330,7 @@ var Board = function () {
         value: function initUI() {
             var _this = this;
 
-            // this.showSplash();
+            this.showSplash();
             var table = document.createElement('table');
             var map = this.map;
 
@@ -353,7 +352,6 @@ var Board = function () {
 
                     obstacle.ui = "";
                     this.placeElement(false, this.map[randomLocation[0]][randomLocation[1]], obstacle);
-                    this.map[randomLocation[0]][randomLocation[1]].content = obstacle;
                     this.map[randomLocation[0]][randomLocation[1]].validMove = false;
                 }
             } catch (err) {
@@ -372,6 +370,7 @@ var Board = function () {
             }
 
             this.validateMoves(this.activePlayer.position);
+
             // Placing Weapons
             var _iteratorNormalCompletion3 = true;
             var _didIteratorError3 = false;
@@ -388,8 +387,6 @@ var Board = function () {
                     } while (this.map[randomLocation[0]][randomLocation[1]].content != "");
 
                     this.placeElement(false, this.map[randomLocation[0]][randomLocation[1]], weapon);
-                    // this.map[randomLocation[0]][randomLocation[1]].content = obstacle;
-                    // this.map[randomLocation[0]][randomLocation[1]].validMove = false;
                 }
             } catch (err) {
                 _didIteratorError3 = true;
@@ -530,7 +527,6 @@ var Board = function () {
         value: function updateUIElement() {
             var _this2 = this;
 
-            console.log("Updating.......");
             var table = document.createElement('table');
             var map = this.map;
             this.validateMoves(this.activePlayer.position);
@@ -679,6 +675,7 @@ var Board = function () {
             var column = activePlayerPosition[1];
             var activePlayerDirection = this.activePlayer.direction.dirStr;
 
+            // --|--
             switch (activePlayerDirection) {
                 case "top":
                     for (var index = row - 1; index >= 0; index--) {

@@ -154,7 +154,7 @@ table tr td > span {
 .splash{
     position: absolute;
     top: 15%;
-    left: 3%;
+    left: 20%;
     border: 10px solid #8b2a00;
     z-index: 100000000;
 }
